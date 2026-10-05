@@ -113,14 +113,6 @@ export class App {
 
     scene.add(this.ambient, this.hemi, this.sky.mesh);
     scene.fog = this.fog;
-    this.sun.shadow.camera.left = -3.4;
-    this.sun.shadow.camera.right = 3.4;
-    this.sun.shadow.camera.top = 3.4;
-    this.sun.shadow.camera.bottom = -3.4;
-    this.sun.shadow.camera.near = 1;
-    this.sun.shadow.camera.far = 14;
-    this.sun.shadow.bias = -0.0004;
-    this.sun.shadow.normalBias = 0.02;
     scene.add(this.sun);
     scene.add(createGroundShadow());
     scene.add(this.ring.object);
@@ -251,13 +243,6 @@ export class App {
 
   private applyTierRendering(): void {
     const t = TIERS[this.tier];
-    this.renderer.shadowMap.enabled = t.shadows;
-    this.sun.castShadow = t.shadows;
-    if (t.shadows) this.sun.shadow.mapSize.set(t.shadowMapSize, t.shadowMapSize);
-    // Shadow state changes the compiled shaders and the shadow map's size.
-    this.sun.shadow.map?.dispose();
-    this.sun.shadow.map = null;
-    this.jelly.material.needsUpdate = true;
     document.documentElement.classList.toggle('ui-blur', t.uiBlur);
     if (this.splash) {
       this.scene.remove(this.splash.mesh);

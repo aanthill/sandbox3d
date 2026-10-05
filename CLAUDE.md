@@ -53,6 +53,8 @@ Lógica e interfaz (CPU) 3,0 ms · Simulación (GPU) 4,0 ms · Dibujo de la esce
 
 ## Niveles de calidad (metas de diseño, se validan midiendo)
 
+Sin sombras del sol (el mapa de sombras se veía pixeleado; decisión del usuario, 2026-10-04): la profundidad la da oclusión ambiental horneada en los vértices del terreno (`world/terrain-mesh.ts`).
+
 | | Bajo (defecto) | Medio | Alto | Ultra |
 |---|---|---|---|---|
 | FPS | 30 a 60 estables | 60 | 60 a 120 | 120 a 144 |
@@ -60,7 +62,7 @@ Lógica e interfaz (CPU) 3,0 ms · Simulación (GPU) 4,0 ms · Dibujo de la esce
 | Plantas | ~15 000 | ~50 000 | ~150 000 | ~300 000 |
 | Partículas | ~30 000 | ~100 000 | ~300 000 | 500 000+ |
 | Texturas | 512 a 1K | 1K | 2K | 2K a 4K |
-| Sombras / blur de interfaz | No / No | Sí / No | Sí / Sí | Sí / Sí |
+| Blur de interfaz | No | No | Sí | Sí |
 
 Calidad adaptable (`src/perf/adaptive.ts`): si el tiempo por cuadro supera ~22 ms baja la resolución interna (hasta 50 %) y la sube despacio cuando hay margen. Nada debe congelar la pantalla: el trabajo pesado (generar o remuestrear el mundo) se reparte en varios cuadros con un presupuesto de milisegundos.
 

@@ -8,6 +8,11 @@ const TURF_DEPTH = 0.1;
 const SOIL_FLOOR = -0.35;
 const SIDES = 4;
 /** How much wet ground darkens (0..1). */
+/** Baked ambient occlusion: how far (world units) we look around, and how dark crevices get. */
+const AO_RADIUS = 0.2;
+const AO_DEPTH = 0.12; // height difference that counts as fully enclosed
+const AO_DARKEN = 0.4;
+const AO_LIGHTEN = 0.1;
 const WET_DARKEN = 0.34;
 const VERTS_PER_COLUMN = 6; // 3 bands x (top, bottom)
 
@@ -25,6 +30,8 @@ export class TerrainMesh {
   private readonly col: BufferAttribute;
   private readonly wallPos: BufferAttribute;
   private water: WaterSim | null = null;
+  /** Occlusion look-around radius in grid cells. */
+  private readonly aoCells: number;
 
   constructor(
     private readonly hf: Heightfield,
@@ -32,6 +39,7 @@ export class TerrainMesh {
     sideMaterial: Material,
   ) {
     const n = hf.n;
+    this.aoCells = Math.max(2, Math.round(AO_RADIUS / hf.cell));
 
     // ---- Top surface ----
     const count = n * n;
@@ -74,8 +82,6 @@ export class TerrainMesh {
     topGeo.setIndex(new BufferAttribute(indices, 1));
     this.top = new Mesh(topGeo, topMaterial);
     this.top.frustumCulled = false;
-    this.top.castShadow = true;
-    this.top.receiveShadow = true;
 
     // ---- Side walls ----
     const wv = SIDES * n * VERTS_PER_COLUMN;
@@ -147,8 +153,6 @@ export class TerrainMesh {
     wallGeo.setIndex(new BufferAttribute(wIndices, 1));
     this.walls = new Mesh(wallGeo, sideMaterial);
     this.walls.frustumCulled = false;
-    this.walls.castShadow = true;
-    this.walls.receiveShadow = true;
 
     // ---- Bottom face (faces down) ----
     const h2 = WORLD_SIZE / 2;
@@ -200,10 +204,12 @@ export class TerrainMesh {
       hf.dirty[ch] = 0;
       const cx = (ch % cps) * CHUNK;
       const cy = Math.floor(ch / cps) * CHUNK;
-      const i0 = Math.max(0, cx - 1);
-      const i1 = Math.min(n - 1, cx + CHUNK);
-      const j0 = Math.max(0, cy - 1);
-      const j1 = Math.min(n - 1, cy + CHUNK);
+      // Wider than the chunk: occlusion looks `aoCells` around each vertex, so neighbors must refresh too.
+      const pad = Math.max(1, this.aoCells);
+      const i0 = Math.max(0, cx - pad);
+      const i1 = Math.min(n - 1, cx + CHUNK - 1 + pad);
+      const j0 = Math.max(0, cy - pad);
+      const j1 = Math.min(n - 1, cy + CHUNK - 1 + pad);
       this.updateRegion(i0, i1, j0, j1, alpha);
       const lo = j0 * n + i0;
       const hi = j1 * n + i1;
@@ -267,6 +273,20 @@ export class TerrainMesh {
         nor[o + 1] = 1 / len;
         nor[o + 2] = -dz / len;
         terrainColor(col, o, h, 1 / len);
+        // Baked ambient occlusion: darker in hollows, a touch lighter on ridges (smooth, no shadow map).
+        const r = this.aoCells;
+        const il = i - r < 0 ? 0 : i - r;
+        const ir = i + r > n - 1 ? n - 1 : i + r;
+        const jl = j - r < 0 ? 0 : j - r;
+        const jr = j + r > n - 1 ? n - 1 : j + r;
+        const around =
+          (this.rh(j * n + il, alpha) + this.rh(j * n + ir, alpha) + this.rh(jl * n + i, alpha) + this.rh(jr * n + i, alpha) +
+            this.rh(jl * n + il, alpha) + this.rh(jl * n + ir, alpha) + this.rh(jr * n + il, alpha) + this.rh(jr * n + ir, alpha)) / 8;
+        const conc = (around - h) / AO_DEPTH;
+        const ao = conc > 0 ? 1 - AO_DARKEN * (conc > 1 ? 1 : conc) : 1 + AO_LIGHTEN * (conc < -1 ? 1 : -conc);
+        col[o] = (col[o] as number) * ao;
+        col[o + 1] = (col[o + 1] as number) * ao;
+        col[o + 2] = (col[o + 2] as number) * ao;
         if (this.water) {
           const wet = this.water.wetForTerrainCell(i, j);
           if (wet > 0) {

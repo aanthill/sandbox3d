@@ -21,3 +21,4 @@ Ideas que no entran en la fase actual. No implementar sin pedirlo.
 - La lluvia deja de añadir agua al llegar a profundidad media 0,3 (bordes cerrados); con cascada en los bordes o evaporación el ciclo sería continuo.
 - Iluminación nocturna: estrellas solo se ven mirando al horizonte; añadir brillo de luna/estrellas visibles desde arriba si se quiere.
 - Espuma del agua: quitada por pedido del usuario (se veía como píxeles blancos). Si se retoma, hacerla como textura suave o partículas, no por patrón en el shader.
+- Sombras proyectadas suaves (si se quieren de vuelta): mapa de sombras con PCF/VSM y radio de desenfoque, solo en Alto/Ultra. Hoy no hay sombras del sol; la profundidad viene de AO horneada en vértices (refresco completo del terreno ~7 ms en CPU en el peor caso; normal al esculpir: unos pocos chunks).
