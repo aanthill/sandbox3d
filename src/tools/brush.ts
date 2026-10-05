@@ -1,7 +1,7 @@
 import { Heightfield, MAX_H, MIN_H, WORLD_SIZE } from '../world/heightfield';
 import type { Stroke } from './history';
 
-export type TerrainToolId = 'raise' | 'lower' | 'smooth' | 'flatten';
+export type TerrainToolId = 'raise' | 'lower' | 'flatten';
 
 export interface BrushSettings {
   /** Brush radius in world units. */
@@ -12,7 +12,7 @@ export interface BrushSettings {
 
 export const BRUSH_LIMITS = { minRadius: 0.1, maxRadius: 1.2 } as const;
 
-/** World units per second at strength 1 (raise/lower) and 1/s blend rate (smooth/flatten). */
+/** World units per second at strength 1 (raise/lower) and 1/s blend rate (flatten). */
 const RAISE_RATE = 1.4;
 const BLEND_RATE = 7;
 
@@ -33,7 +33,6 @@ export class Sculptor {
   private touchedIdx: number[] = [];
   private touchedBefore: number[] = [];
   private flattenLevel = 0;
-  private scratch = new Float32Array(0);
 
   constructor(readonly hf: Heightfield) {
     this.touched = new Uint8Array(hf.n * hf.n);
@@ -55,17 +54,6 @@ export class Sculptor {
     const j1 = Math.min(n - 1, Math.ceil((z + r + half) / hf.cell));
     if (i1 < i0 || j1 < j0) return;
 
-    const w = i1 - i0 + 1;
-    const hgt = j1 - j0 + 1;
-    let smoothSrc: Float32Array | null = null;
-    if (tool === 'smooth') {
-      if (this.scratch.length < w * hgt) this.scratch = new Float32Array(w * hgt);
-      smoothSrc = this.scratch;
-      for (let j = 0; j < hgt; j++) {
-        for (let i = 0; i < w; i++) smoothSrc[j * w + i] = hf.target[(j0 + j) * n + i0 + i] as number;
-      }
-    }
-
     const sign = tool === 'lower' ? -1 : 1;
     const amount = b.strength * dt;
     let any = false;
@@ -84,21 +72,6 @@ export class Sculptor {
           next = cur + sign * RAISE_RATE * amount * f;
         } else if (tool === 'flatten') {
           next = cur + (this.flattenLevel - cur) * Math.min(1, BLEND_RATE * amount * f);
-        } else if (smoothSrc) {
-          const li = Math.max(i0, i - 1) - i0;
-          const ri = Math.min(i1, i + 1) - i0;
-          const uj = Math.max(j0, j - 1) - j0;
-          const dj = Math.min(j1, j + 1) - j0;
-          const jj = j - j0;
-          const ii = i - i0;
-          const avg =
-            ((smoothSrc[jj * w + li] as number) +
-              (smoothSrc[jj * w + ri] as number) +
-              (smoothSrc[uj * w + ii] as number) +
-              (smoothSrc[dj * w + ii] as number) +
-              (smoothSrc[jj * w + ii] as number) * 4) /
-            8;
-          next = cur + (avg - cur) * Math.min(1, BLEND_RATE * amount * f);
         }
 
         next = next < MIN_H ? MIN_H : next > MAX_H ? MAX_H : next;

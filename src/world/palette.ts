@@ -17,7 +17,6 @@ export const PALETTE = {
   rim: 0x7fa6ff,
   waterShallow: 0x2fe3d6,
   waterDeep: 0x0b3cc4,
-  foam: 0xffffff,
   sky: 0xbcd8ff,
   rain: 0xcfe4ff,
   ground: 0x000000,

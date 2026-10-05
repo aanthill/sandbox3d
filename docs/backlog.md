@@ -20,3 +20,4 @@ Ideas que no entran en la fase actual. No implementar sin pedirlo.
 - Lluvia: salpicaduras/ondas de impacto en el agua y en el suelo; con lluvia fuerte toda la rejilla de agua queda despierta (~1 ms/paso en CPU en Node): pasar el agua a GPU lo resuelve.
 - La lluvia deja de añadir agua al llegar a profundidad media 0,3 (bordes cerrados); con cascada en los bordes o evaporación el ciclo sería continuo.
 - Iluminación nocturna: estrellas solo se ven mirando al horizonte; añadir brillo de luna/estrellas visibles desde arriba si se quiere.
+- Espuma del agua: quitada por pedido del usuario (se veía como píxeles blancos). Si se retoma, hacerla como textura suave o partículas, no por patrón en el shader.

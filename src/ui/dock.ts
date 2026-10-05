@@ -33,7 +33,6 @@ export interface DockOptions {
 const ICONS: Record<string, string> = {
   raise: '<path d="M4 18c3-1 4-6 8-6s5 5 8 6"/><path d="M12 9V3m-3 3 3-3 3 3"/>',
   lower: '<path d="M4 8c3 1 4 6 8 6s5-5 8-6"/><path d="M12 15v6m-3-3 3 3 3-3"/>',
-  smooth: '<path d="M3 9c3-3 6 3 9 0s6 3 9 0"/><path d="M3 15c3-3 6 3 9 0s6 3 9 0"/>',
   flatten: '<path d="M4 12h16"/><path d="M7 8l-3 4 3 4M17 8l3 4-3 4"/>',
   pour: '<path d="M12 3c3 4 5 6.5 5 9.5a5 5 0 0 1-10 0C7 9.500 9 7 12 3z"/>',
   fountain: '<path d="M12 20v-7"/><path d="M12 13c0-4-4-5-6-8M12 13c0-4 4-5 6-8"/><path d="M6 20h12"/>',
@@ -48,7 +47,6 @@ const ICONS: Record<string, string> = {
 const TOOL_LABEL: Record<ToolId, string> = {
   raise: 'Raise',
   lower: 'Lower',
-  smooth: 'Smooth',
   flatten: 'Flatten',
   pour: 'Pour water (hold)',
   fountain: 'Fountain (click to place / remove)',
@@ -183,7 +181,7 @@ export class Dock {
 
     const hint = document.createElement('div');
     hint.className = 'hint';
-    hint.innerHTML = 'Left drag: sculpt<br>Right drag: orbit · Wheel: zoom<br>1–8 tools · [ ] size<br>Water: hold to pour · click to place a fountain';
+    hint.innerHTML = 'Left drag: sculpt<br>Right drag: orbit · Wheel: zoom<br>1–7 tools · [ ] size<br>Water: hold to pour · click to place a fountain';
 
     document.body.append(this.root, this.settings, this.toast, hint);
     this.updateHistory(null);

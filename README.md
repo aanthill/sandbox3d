@@ -13,8 +13,8 @@ A living 3D diorama floating in the void: sculpt terrain, make rain, open rivers
 | Left drag | Sculpt with the selected tool |
 | Right / middle drag | Orbit the camera |
 | Wheel | Zoom |
-| `1`–`4` | Raise · Lower · Smooth · Flatten |
-| `5`–`8` | Pour (hold) · Fountain (click to place/remove, max 8) · Rain (hold) · Drain (hold) |
+| `1`–`3` | Raise · Lower · Flatten |
+| `4`–`7` | Pour (hold) · Fountain (click to place/remove, max 8) · Rain (hold) · Drain (hold) |
 | `[` `]` | Brush size |
 | Shift (while sculpting) | Precision (weaker strength) |
 | Ctrl+Z / Ctrl+Shift+Z | Undo / redo (last 20 strokes) |

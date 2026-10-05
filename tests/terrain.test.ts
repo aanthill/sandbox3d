@@ -105,20 +105,6 @@ describe('Sculptor', () => {
     expect(Math.abs((hf.target[hf.index(34, 32)] as number) - 0.5)).toBeLessThan(0.05);
   });
 
-  it('smooth reduces roughness', () => {
-    const hf = flat(64, 0.5);
-    for (let k = 0; k < hf.target.length; k++) hf.setInstant(k, 0.5 + (k % 2 ? 0.2 : -0.2));
-    const rough = (arr: Float32Array) => {
-      let s = 0;
-      for (let k = 1; k < arr.length; k++) s += Math.abs((arr[k] as number) - (arr[k - 1] as number));
-      return s;
-    };
-    const before = rough(hf.target);
-    const s = new Sculptor(hf);
-    for (let i = 0; i < 60; i++) s.apply('smooth', 0, 0, { radius: 1.5, strength: 1 }, DT);
-    expect(rough(hf.target)).toBeLessThan(before);
-  });
-
   it('undo and redo restore targets exactly', () => {
     const hf = flat(64, 0.3);
     const s = new Sculptor(hf);

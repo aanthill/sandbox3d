@@ -3,8 +3,8 @@ import type { TerrainToolId } from './brush';
 export type WaterToolId = 'pour' | 'fountain' | 'rain' | 'drain';
 export type ToolId = TerrainToolId | WaterToolId;
 
-/** Dock order; keys 1..8 select by position. */
-export const TERRAIN_TOOLS: readonly TerrainToolId[] = ['raise', 'lower', 'smooth', 'flatten'];
+/** Dock order; keys 1..7 select by position. */
+export const TERRAIN_TOOLS: readonly TerrainToolId[] = ['raise', 'lower', 'flatten'];
 export const WATER_TOOLS: readonly WaterToolId[] = ['pour', 'fountain', 'rain', 'drain'];
 export const TOOL_IDS: readonly ToolId[] = [...TERRAIN_TOOLS, ...WATER_TOOLS];
 
