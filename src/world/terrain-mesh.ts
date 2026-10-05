@@ -1,11 +1,14 @@
 import { BufferAttribute, BufferGeometry, Group, Mesh, type Material } from 'three/webgpu';
 import { BASE_Y, CHUNK, Heightfield, WORLD_SIZE } from './heightfield';
 import { LINEAR, terrainColor } from './palette';
+import type { WaterSim } from '../sim/water';
 
 /** Strata thickness below the surface, and the fixed rock line (world y). */
 const TURF_DEPTH = 0.1;
 const SOIL_FLOOR = -0.35;
 const SIDES = 4;
+/** How much wet ground darkens (0..1). */
+const WET_DARKEN = 0.34;
 const VERTS_PER_COLUMN = 6; // 3 bands x (top, bottom)
 
 /**
@@ -21,6 +24,7 @@ export class TerrainMesh {
   private readonly nor: BufferAttribute;
   private readonly col: BufferAttribute;
   private readonly wallPos: BufferAttribute;
+  private water: WaterSim | null = null;
 
   constructor(
     private readonly hf: Heightfield,
@@ -169,6 +173,11 @@ export class TerrainMesh {
     this.group.add(this.top, this.walls, bottom);
   }
 
+  /** Lets the terrain darken where water has soaked in. */
+  setWater(water: WaterSim | null): void {
+    this.water = water;
+  }
+
   /** Displayed height of a cell, blending the last two simulation steps. */
   private rh(idx: number, alpha: number): number {
     const p = this.hf.prev[idx] as number;
@@ -200,6 +209,27 @@ export class TerrainMesh {
       const hi = j1 * n + i1;
       if (lo < minIdx) minIdx = lo;
       if (hi > maxIdx) maxIdx = hi;
+    }
+    // Wetness changed in the water grid: recolor the matching terrain cells.
+    const water = this.water;
+    if (water) {
+      const wcps = water.cps;
+      const k = (hf.n - 1) / (water.n - 1);
+      for (let wch = 0; wch < wcps * wcps; wch++) {
+        if (!water.wetDirty[wch]) continue;
+        water.wetDirty[wch] = 0;
+        const wi0 = (wch % wcps) * CHUNK;
+        const wj0 = Math.floor(wch / wcps) * CHUNK;
+        const i0 = Math.max(0, Math.floor(wi0 * k) - 1);
+        const i1 = Math.min(n - 1, Math.ceil(Math.min(water.n - 1, wi0 + CHUNK) * k) + 1);
+        const j0 = Math.max(0, Math.floor(wj0 * k) - 1);
+        const j1 = Math.min(n - 1, Math.ceil(Math.min(water.n - 1, wj0 + CHUNK) * k) + 1);
+        this.updateRegion(i0, i1, j0, j1, alpha);
+        const lo = j0 * n + i0;
+        const hi = j1 * n + i1;
+        if (lo < minIdx) minIdx = lo;
+        if (hi > maxIdx) maxIdx = hi;
+      }
     }
     if (maxIdx < 0) return false;
 
@@ -237,6 +267,15 @@ export class TerrainMesh {
         nor[o + 1] = 1 / len;
         nor[o + 2] = -dz / len;
         terrainColor(col, o, h, 1 / len);
+        if (this.water) {
+          const wet = this.water.wetForTerrainCell(i, j);
+          if (wet > 0) {
+            const k = 1 - WET_DARKEN * wet;
+            col[o] = (col[o] as number) * k;
+            col[o + 1] = (col[o + 1] as number) * k;
+            col[o + 2] = (col[o + 2] as number) * (k + 0.05 * wet);
+          }
+        }
       }
     }
   }

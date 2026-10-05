@@ -14,6 +14,10 @@ export const PALETTE = {
   deepRock: 0x7a82a0,
   bottom: 0x535a76,
   rim: 0xbcd0ff,
+  waterShallow: 0x8fe4ff,
+  waterDeep: 0x2f6fe0,
+  foam: 0xffffff,
+  sky: 0xd6e6ff,
   ground: 0x000000,
 } as const;
 

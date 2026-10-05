@@ -15,7 +15,7 @@ El plan completo está en `docs/plan.md`. Léelo antes de empezar cualquier fase
 | 5 | Color | Abierto: los materiales usan un color base como parámetro; colores de trabajo neutros por ahora |
 | 6 | Tecnología 3D | Three.js + TypeScript + Vite |
 | 7 | Renderizado | WebGPU con respaldo automático a WebGL2 |
-| 8 | Agua | Mapa de alturas de agua en la GPU + partículas de salpicadura y espuma |
+| 8 | Agua | Mapa de alturas de agua + partículas de salpicadura y espuma. **Fase 2 arranca en CPU** (tuberías virtuales, rejilla de agua máx. 128², mismo diseño de datos, chunks dormidos); el paso a GPU (compute) queda en `docs/backlog.md` |
 | 9 | Física | Rapier (WebAssembly) |
 | 10 | Interfaz | HTML/CSS + TypeScript, vidrio translúcido estilo iOS, resortes |
 | 11 | Equipo objetivo | PC media-alta y alta; niveles **Bajo (por defecto), Medio, Alto, Ultra**; aviso claro en celular. Bajo se agregó tras la primera prueba en la PC del usuario (~55 FPS con un cubo): hay que cuidar equipos modestos |

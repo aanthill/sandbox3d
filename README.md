@@ -4,7 +4,7 @@ A living 3D diorama floating in the void: sculpt terrain, make rain, open rivers
 
 > Working name. Plan: [`docs/plan.md`](docs/plan.md). Decisions and rules: [`CLAUDE.md`](CLAUDE.md).
 
-**Status:** Phase 1 (in progress). A floating block of jelly-like terrain you can sculpt, with spring wobble, a fresnel-lit material, strata walls, an orbit camera, undo/redo, quality tiers and adaptive resolution. Rendering uses WebGPU and falls back to WebGL2 automatically.
+**Status:** Phase 2 (water, in progress). Phase 1 is done. A floating block of jelly-like terrain you can sculpt, with spring wobble, a fresnel-lit material, strata walls, an orbit camera, undo/redo, quality tiers and adaptive resolution. Rendering uses WebGPU and falls back to WebGL2 automatically.
 
 ### Controls
 
@@ -13,14 +13,15 @@ A living 3D diorama floating in the void: sculpt terrain, make rain, open rivers
 | Left drag | Sculpt with the selected tool |
 | Right / middle drag | Orbit the camera |
 | Wheel | Zoom |
-| `1` `2` `3` `4` | Raise · Lower · Smooth · Flatten |
+| `1`–`4` | Raise · Lower · Smooth · Flatten |
+| `5`–`8` | Pour (hold) · Fountain (click to place/remove, max 8) · Rain (hold) · Drain (hold) |
 | `[` `]` | Brush size |
 | Shift (while sculpting) | Precision (weaker strength) |
 | Ctrl+Z / Ctrl+Shift+Z | Undo / redo (last 20 strokes) |
 
-The dock also has a dice button (new world) and settings: **Wobble**, **Glow** and **Quality** (Low is the default; Ultra is experimental).
+The dock also has a dice button (new world) and settings: **Wobble**, **Glow**, **Sea level** (0 = off) and **Quality** (Low is the default; Ultra is experimental).
 
-Debug URL switches: `?pr=1` (pixel ratio), `?webgl` (force WebGL2).
+Debug URL switches: `?pr=1` (pixel ratio), `?webgl` (force WebGL2), `?debug` (exposes `window.__sandbox`).
 
 ## Run it
 

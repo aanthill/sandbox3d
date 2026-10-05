@@ -1,9 +1,7 @@
 import { Heightfield, MAX_H, MIN_H, WORLD_SIZE } from '../world/heightfield';
 import type { Stroke } from './history';
 
-export type ToolId = 'raise' | 'lower' | 'smooth' | 'flatten';
-
-export const TOOL_IDS: readonly ToolId[] = ['raise', 'lower', 'smooth', 'flatten'];
+export type TerrainToolId = 'raise' | 'lower' | 'smooth' | 'flatten';
 
 export interface BrushSettings {
   /** Brush radius in world units. */
@@ -46,7 +44,7 @@ export class Sculptor {
   }
 
   /** Applies one fixed-step worth of the tool at world position (x, z). */
-  apply(tool: ToolId, x: number, z: number, b: BrushSettings, dt: number): void {
+  apply(tool: TerrainToolId, x: number, z: number, b: BrushSettings, dt: number): void {
     const hf = this.hf;
     const n = hf.n;
     const half = WORLD_SIZE / 2;

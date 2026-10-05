@@ -1,6 +1,5 @@
 import { Vector2 } from 'three/webgpu';
-import type { ToolId } from '../tools/brush';
-import { TOOL_IDS } from '../tools/brush';
+import { TOOL_IDS, type ToolId } from '../tools/tools';
 import type { CameraRig } from './camera-rig';
 
 export interface InputHandlers {

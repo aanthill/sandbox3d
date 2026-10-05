@@ -1,5 +1,6 @@
 import { SPRING_CONFIG } from '../anim/config';
-import { BRUSH_LIMITS, TOOL_IDS, type BrushSettings, type ToolId } from '../tools/brush';
+import { BRUSH_LIMITS, type BrushSettings } from '../tools/brush';
+import { TERRAIN_TOOLS, WATER_TOOLS, TOOL_IDS, type ToolId } from '../tools/tools';
 import type { History } from '../tools/history';
 import { TIER_ORDER, TIERS, type TierId } from '../perf/quality';
 
@@ -14,6 +15,7 @@ export interface DockOptions {
   onStrength(s: number): void;
   onWobble(w: number): void;
   onGlow(g: number): void;
+  onSea(level01: number): void;
   onUndo(): void;
   onRedo(): void;
   onNewWorld(): void;
@@ -25,6 +27,10 @@ const ICONS: Record<string, string> = {
   lower: '<path d="M4 8c3 1 4 6 8 6s5-5 8-6"/><path d="M12 15v6m-3-3 3 3 3-3"/>',
   smooth: '<path d="M3 9c3-3 6 3 9 0s6 3 9 0"/><path d="M3 15c3-3 6 3 9 0s6 3 9 0"/>',
   flatten: '<path d="M4 12h16"/><path d="M7 8l-3 4 3 4M17 8l3 4-3 4"/>',
+  pour: '<path d="M12 3c3 4 5 6.5 5 9.5a5 5 0 0 1-10 0C7 9.500 9 7 12 3z"/>',
+  fountain: '<path d="M12 20v-7"/><path d="M12 13c0-4-4-5-6-8M12 13c0-4 4-5 6-8"/><path d="M6 20h12"/>',
+  rain: '<path d="M7 14a4 4 0 0 1 1-7.900 5 5 0 0 1 9.500 1.400A3.300 3.300 0 0 1 17 14z"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>',
+  drain: '<path d="M12 4v10m-4-4 4 4 4-4"/><path d="M5 19h14"/>',
   undo: '<path d="M9 7 4 12l5 5"/><path d="M4 12h9a6 6 0 0 1 0 12"/>',
   redo: '<path d="m15 7 5 5-5 5"/><path d="M20 12h-9a6 6 0 0 0 0 12"/>',
   dice: '<rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/><circle cx="9" cy="15" r="1" fill="currentColor"/>',
@@ -36,6 +42,10 @@ const TOOL_LABEL: Record<ToolId, string> = {
   lower: 'Lower',
   smooth: 'Smooth',
   flatten: 'Flatten',
+  pour: 'Pour water (hold)',
+  fountain: 'Fountain (click to place / remove)',
+  rain: 'Rain (hold)',
+  drain: 'Drain (hold)',
 };
 
 function svg(name: string): string {
@@ -87,16 +97,17 @@ export class Dock {
     this.root.className = 'dock';
     this.root.setAttribute('role', 'toolbar');
 
-    TOOL_IDS.forEach((id, i) => {
-      const b = button(id, `${TOOL_LABEL[id]} (${i + 1})`);
-      b.addEventListener('click', () => o.onTool(id));
-      this.toolButtons.set(id, b);
-      this.root.append(b);
-    });
-    this.setTool(o.tool);
-
     const sep = () => Object.assign(document.createElement('div'), { className: 'sep' });
-    this.root.append(sep());
+    for (const group of [TERRAIN_TOOLS, WATER_TOOLS]) {
+      for (const id of group) {
+        const b = button(id, `${TOOL_LABEL[id]} (${TOOL_IDS.indexOf(id) + 1})`);
+        b.addEventListener('click', () => o.onTool(id));
+        this.toolButtons.set(id, b);
+        this.root.append(b);
+      }
+      this.root.append(sep());
+    }
+    this.setTool(o.tool);
 
     const size = slider('Size  [ ]', BRUSH_LIMITS.minRadius, BRUSH_LIMITS.maxRadius, 0.01, o.brush.radius, o.onRadius);
     this.sizeInput = size.input;
@@ -120,6 +131,7 @@ export class Dock {
     title.textContent = 'Settings';
     const wob = slider('Wobble', 0, 100, 1, o.wobble, o.onWobble);
     const glow = slider('Glow', 0, 1, 0.01, o.glow, o.onGlow);
+    const sea = slider('Sea level (0 = off)', 0, 1, 0.01, 0, o.onSea);
     const tierWrap = document.createElement('label');
     tierWrap.className = 'field';
     const tierText = document.createElement('span');
@@ -137,7 +149,7 @@ export class Dock {
     const note = document.createElement('div');
     note.className = 'note';
     note.textContent = 'Lower the quality if it stutters. Higher levels use a finer terrain.';
-    this.settings.append(title, wob.wrap, glow.wrap, tierWrap, note);
+    this.settings.append(title, wob.wrap, glow.wrap, sea.wrap, tierWrap, note);
     gear.addEventListener('click', () => {
       const open = this.settings.classList.toggle('hidden') === false;
       gear.setAttribute('aria-pressed', String(open));
@@ -149,7 +161,7 @@ export class Dock {
 
     const hint = document.createElement('div');
     hint.className = 'hint';
-    hint.innerHTML = 'Left drag: sculpt<br>Right drag: orbit · Wheel: zoom<br>1–4 tools · [ ] size';
+    hint.innerHTML = 'Left drag: sculpt<br>Right drag: orbit · Wheel: zoom<br>1–8 tools · [ ] size<br>Water: hold to pour · click to place a fountain';
 
     document.body.append(this.root, this.settings, this.toast, hint);
     this.updateHistory(null);

@@ -16,17 +16,23 @@ import { MAX_PIXEL_RATIO, SIM_HZ, readDebugParams } from './core/config';
 import { FixedStep } from './core/fixed-step';
 import { InputController } from './core/input';
 import { createJellyMaterial, type JellyMaterial } from './materials/jelly';
+import { createWaterMaterial } from './materials/water';
+import { WaterSim } from './sim/water';
+import { WaterMesh } from './world/water-mesh';
 import { AdaptiveQuality } from './perf/adaptive';
 import { PerfPanel } from './perf/panel';
 import { PerfStats } from './perf/stats';
 import { TIERS, loadTier, saveTier, type TierId } from './perf/quality';
 import { BrushRing } from './tools/brush-ring';
-import { BRUSH_LIMITS, Sculptor, type BrushSettings, type ToolId } from './tools/brush';
+import { BRUSH_LIMITS, Sculptor, type BrushSettings } from './tools/brush';
+import { WATER_TOOL_TUNING, isWaterTool, type ToolId, type WaterToolId } from './tools/tools';
+import { Splash } from './fx/splash';
+import { FountainMarkers } from './world/fountain-markers';
 import { History } from './tools/history';
 import { Dock } from './ui/dock';
 import { generateTerrain, resampleTerrain } from './world/generate';
 import { createGroundShadow } from './world/ground-shadow';
-import { Heightfield } from './world/heightfield';
+import { Heightfield, MAX_H, MIN_H } from './world/heightfield';
 import { PALETTE } from './world/palette';
 import { raycastHeightfield, type Hit } from './world/pick';
 import { TerrainMesh } from './world/terrain-mesh';
@@ -52,6 +58,12 @@ export class App {
   private hf!: Heightfield;
   private sculptor!: Sculptor;
   private mesh!: TerrainMesh;
+  private water!: WaterSim;
+  private waterMesh!: WaterMesh;
+  private readonly waterMaterial = createWaterMaterial();
+  private readonly markers = new FountainMarkers();
+  private splash: Splash | null = null;
+  private seaSlider = 0;
   private input!: InputController;
   private dock!: Dock;
   private panel!: PerfPanel;
@@ -76,6 +88,7 @@ export class App {
 
   /** Builds the world and starts the loop. */
   async start(): Promise<void> {
+    if (readDebugParams().debug) (window as unknown as { __sandbox: App }).__sandbox = this;
     const scene = this.scene;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
@@ -94,6 +107,7 @@ export class App {
     scene.add(this.sun);
     scene.add(createGroundShadow());
     scene.add(this.ring.object);
+    scene.add(this.markers.group);
 
     this.panel = new PerfPanel(this.stats, this.backend, () => {
       const s = this.renderer.getDrawingBufferSize(this.drawSize);
@@ -111,6 +125,7 @@ export class App {
       onStrength: (s) => (this.brush.strength = s),
       onWobble: (w) => (this.wobble = w),
       onGlow: (g) => this.jelly.setGlow(g),
+      onSea: (v) => this.setSea(v),
       onUndo: () => this.undo(),
       onRedo: () => this.redo(),
       onNewWorld: () => void this.newWorld(),
@@ -145,24 +160,34 @@ export class App {
   // ---------------------------------------------------------------- world
 
   /** Creates a new heightfield with `fill`, builds its mesh, then swaps it in (never half-built on screen). */
-  private async buildWorld(n: number, fill: (hf: Heightfield) => Generator<void, void, void>): Promise<void> {
+  private async buildWorld(n: number, fill: (hf: Heightfield) => Generator<void, void, void>, keepWater?: WaterSim): Promise<void> {
     this.busy = true;
     this.dock?.setBusy(true);
     const hf = new Heightfield(n);
     await runBudgeted(fill(hf));
     const mesh = new TerrainMesh(hf, this.jelly.material, this.jelly.material);
+    const water = new WaterSim(hf);
+    if (keepWater) water.copyFrom(keepWater);
+    const waterMesh = new WaterMesh(water, this.waterMaterial);
+    mesh.setWater(water);
+    mesh.group.add(waterMesh.group);
+    waterMesh.update();
     mesh.update(1); // first fill happens here, while the "building" notice is up
 
     if (this.mesh) {
       this.scene.remove(this.mesh.group);
       this.mesh.dispose();
+      this.waterMesh.dispose();
     }
     this.hf = hf;
+    this.water = water;
+    this.waterMesh = waterMesh;
     this.mesh = mesh;
     this.sculptor = new Sculptor(hf);
     this.history.clear();
     this.dock?.updateHistory(this.history);
     this.scene.add(mesh.group);
+    this.applySea();
     this.busy = false;
     this.dock?.setBusy(false);
   }
@@ -178,11 +203,12 @@ export class App {
     this.tier = id;
     saveTier(id);
     const old = this.hf;
+    const oldWater = this.water;
     this.applyTierRendering();
     this.adaptive.reset();
     this.adaptive.scale = 1;
     this.resolutionScale = 1;
-    await this.buildWorld(TIERS[id].grid, (hf) => resampleTerrain(old.target, old.n, hf));
+    await this.buildWorld(TIERS[id].grid, (hf) => resampleTerrain(old.target, old.n, hf), oldWater);
     this.applyResolution(true);
   }
 
@@ -196,6 +222,12 @@ export class App {
     this.sun.shadow.map = null;
     this.jelly.material.needsUpdate = true;
     document.documentElement.classList.toggle('ui-blur', t.uiBlur);
+    if (this.splash) {
+      this.scene.remove(this.splash.mesh);
+      this.splash.dispose();
+    }
+    this.splash = new Splash(t.splash);
+    this.scene.add(this.splash.mesh);
     this.applyResolution(true);
   }
 
@@ -217,6 +249,41 @@ export class App {
 
   // ---------------------------------------------------------------- tools
 
+  /** Slider 0 = no sea; otherwise maps linearly onto a level inside the terrain's height range. */
+  private setSea(v: number): void {
+    this.seaSlider = v;
+    this.applySea();
+  }
+
+  private applySea(): void {
+    const v = this.seaSlider;
+    this.water.setSeaLevel(v <= 0.005 ? null : MIN_H + 0.1 + v * (MAX_H * 0.5 - MIN_H));
+  }
+
+  private useWaterTool(tool: WaterToolId, dt: number): void {
+    const w = this.water;
+    const b = this.brush;
+    const strength = this.input.shift ? b.strength * 0.35 : b.strength;
+    const T = WATER_TOOL_TUNING;
+    const y = w.surfaceAt(this.hit.x, this.hit.z);
+    if (tool === 'pour') {
+      w.addVolume(this.hit.x, this.hit.z, b.radius, T.pourRate * strength * dt);
+      this.splash?.emit(this.hit.x, y + 0.05, this.hit.z, 2, 1.2, 0.25);
+    } else if (tool === 'rain') {
+      const n = Math.max(1, Math.round(T.rainDrops * strength));
+      for (let k = 0; k < n; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * b.radius;
+        const x = this.hit.x + Math.cos(a) * r;
+        const z = this.hit.z + Math.sin(a) * r;
+        w.addVolume(x, z, w.cell * 1.5, T.rainDropVolume);
+        this.splash?.emit(x, w.surfaceAt(x, z) + 0.02, z, 1, 0.7, 0.12);
+      }
+    } else if (tool === 'drain') {
+      w.drain(this.hit.x, this.hit.z, b.radius, T.drainRate * strength, dt);
+    }
+  }
+
   private selectTool(t: ToolId): void {
     this.tool = t;
     this.dock.setTool(t);
@@ -230,11 +297,22 @@ export class App {
 
   private beginStroke(): boolean {
     if (this.busy || !this.hasHit) return false;
+    if (isWaterTool(this.tool)) {
+      if (this.tool === 'fountain') {
+        const T = WATER_TOOL_TUNING;
+        if (!this.water.removeSourceNear(this.hit.x, this.hit.z, T.fountainPickRadius)) {
+          this.water.addSource(this.hit.x, this.hit.z, T.fountainRate);
+        }
+        return false; // a click, not a stroke
+      }
+      return true;
+    }
     this.sculptor.beginStroke(this.hit.x, this.hit.z);
     return true;
   }
 
   private endStroke(): void {
+    if (isWaterTool(this.tool)) return;
     const stroke = this.sculptor.endStroke();
     if (stroke) {
       this.history.push(stroke);
@@ -279,6 +357,17 @@ export class App {
     );
   }
 
+  private emitFountainSplash(): void {
+    const src = this.water.sources;
+    if (src.length === 0 || this.simTick++ % 3 !== 0) return;
+    for (let k = 0; k < src.length; k++) {
+      const s = src[k];
+      if (s) this.splash?.emit(s.x, this.water.surfaceAt(s.x, s.z) + 0.05, s.z, 1, 1.6, 0.18);
+    }
+  }
+
+  private simTick = 0;
+
   private frame(now: number): void {
     const frameMs = now - this.lastFrame;
     this.lastFrame = now;
@@ -294,10 +383,18 @@ export class App {
     const spring = terrainSpring(this.wobble);
     for (let i = 0; i < steps; i++) {
       if (this.input.sculpting && this.hasHit && !this.busy) {
-        const b = this.input.shift ? { ...this.brush, strength: this.brush.strength * 0.35 } : this.brush;
-        this.sculptor.apply(this.tool, this.hit.x, this.hit.z, b, dt);
+        const tool = this.tool;
+        if (isWaterTool(tool)) this.useWaterTool(tool, dt);
+        else {
+          const b = this.input.shift ? { ...this.brush, strength: this.brush.strength * 0.35 } : this.brush;
+          this.sculptor.apply(tool, this.hit.x, this.hit.z, b, dt);
+        }
       }
       this.hf.step(dt, spring);
+      this.water.step(dt);
+      this.markers.step(dt, this.water);
+      this.emitFountainSplash();
+      this.splash?.step(dt, this.water);
       this.rig.step(dt);
       this.ring.step(dt);
       this.simTime += dt;
@@ -309,6 +406,10 @@ export class App {
     this.camera.updateMatrixWorld();
     this.pick();
     this.mesh.update(alpha);
+    this.waterMesh.update();
+    this.splash?.update();
+    this.markers.group.position.y = this.mesh.group.position.y;
+    if (this.splash) this.splash.mesh.position.y = this.mesh.group.position.y;
     this.ring.update(this.hf, this.hit.x, this.hit.z, this.hasHit);
     this.ring.object.position.y = this.mesh.group.position.y;
 

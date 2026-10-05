@@ -12,3 +12,7 @@ Ideas que no entran en la fase actual. No implementar sin pedirlo.
 - **Ultra (1024²) no cabe en CPU:** medido en el peor caso (todo el terreno moviéndose), el paso de resortes cuesta ~14 ms (128²: 0,3 ms · 256²: 0,7 ms · 512²: 2,5 ms; presupuesto de CPU: 3 ms). Mover los resortes y la actualización de vértices a la GPU (compute) antes de ofrecer Ultra como nivel normal. Hoy aparece como "experimental".
 - Relleno inicial de la malla repartido en varios cuadros (hoy es un solo cuadro bajo el aviso "Building world…"; en Ultra puede tardar).
 - Ajuste fino de la sensación del wobble (rigidez 90, amortiguación según el deslizador) en la PC del usuario.
+- **Agua a GPU (compute) y mayor resolución:** hoy la simulación corre en CPU con rejilla máx. 128² (regla 3 pendiente); subir a 256²+ requiere compute shaders.
+- Opción de cascada en los bordes del bloque (hoy los bordes son paredes cerradas).
+- Refracción y cáusticas del agua; partículas de espuma en orillas y cascadas.
+- Mejorar el color del agua con la profundidad en la pared lateral (corte transversal).

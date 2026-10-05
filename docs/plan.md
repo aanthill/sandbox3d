@@ -220,6 +220,8 @@ Cuadrícula de 256x256 (Medio), 512x512 (Alto) o 1024x1024 (Ultra), ajustable. C
 
 ### Fase 2: Agua
 
+> **Estado:** implementada en CPU (tuberías virtuales, rejilla ≤128², chunks dormidos). Bordes = paredes cerradas. Pendiente en backlog: GPU, refracción/cáusticas, espuma en partículas. Falta validación en la PC del usuario.
+
 - Simulación de aguas poco profundas en GPU.
 - Herramientas: fuente, lluvia local, drenar, nivel del mar.
 - Shader de agua: absorción, refracción, espuma en orillas, reflejo del cielo, normales animadas.
