@@ -1,5 +1,5 @@
 import { Color, MeshStandardNodeMaterial } from 'three/webgpu';
-import { float, normalView, positionViewDirection, positionWorld, smoothstep, uniform, vertexColor } from 'three/tsl';
+import { float, mix, mx_noise_float, normalView, normalWorld, positionView, positionViewDirection, positionWorld, smoothstep, uniform, vec2, vec3, vertexColor } from 'three/tsl';
 import { BASE_Y, MAX_H } from '../world/heightfield';
 
 export interface JellyMaterial {
@@ -25,6 +25,21 @@ export function createJellyMaterial(rimHex: number, glow = 0.7): JellyMaterial {
   // 0 when the block is tall (thick), 1 when thin: light seems to pass through it.
   const thin = float(1).sub(smoothstep(float(BASE_Y), float(MAX_H), positionWorld.y));
   const inner = vertexColor().rgb.mul(thin.mul(0.1));
+
+  // Grass as a texture: procedural lawn mottling (patches + fine blade streaks) multiplies the vertex
+  // color only on green, upward-facing ground. Fine detail fades with distance so it never shimmers.
+  const vc = vertexColor().rgb;
+  const greenness = smoothstep(float(0.02), float(0.12), vc.g.sub(vc.r.max(vc.b)));
+  const upFacing = smoothstep(float(0.7), float(0.9), normalWorld.y);
+  const xz = positionWorld.xz;
+  const patches = mx_noise_float(vec3(xz.mul(14), 0.5)).mul(0.5).add(mx_noise_float(vec3(xz.mul(4), 3.5)).mul(0.5));
+  const streakA = mx_noise_float(vec3(vec2(xz.x.mul(46), xz.y.mul(120)), 7.5));
+  const streakB = mx_noise_float(vec3(vec2(xz.x.mul(120), xz.y.mul(46)), 11.5));
+  const fine = streakA.add(streakB).mul(0.5);
+  const near = float(1).sub(smoothstep(float(3.5), float(8), positionView.z.negate()));
+  const tone = patches.mul(0.3).add(fine.mul(0.22).mul(near));
+  const lawn = vec3(float(1).add(tone.mul(0.7)), float(1).add(tone), float(1).add(tone.mul(0.25)));
+  material.colorNode = mix(vec3(1, 1, 1), lawn, greenness.mul(upFacing));
 
   material.emissiveNode = rimColor.mul(fresnel.mul(0.4)).add(inner).mul(glowAmount);
 

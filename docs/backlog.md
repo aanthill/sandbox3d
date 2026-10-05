@@ -25,3 +25,8 @@ Ideas que no entran en la fase actual. No implementar sin pedirlo.
 - Vida (Fase 5, aplazado): fuego que se propaga (depende de los desastres), estaciones, criaturas luminosas (luciérnagas/peces/pájaros), balanceo de plantas por viento (hoy no se mueven salvo con el terreno), LOD y cantidad dinámica de plantas según FPS.
 - Plantas: el crecimiento corre en CPU por rebanadas (1/30 de las plantas por cuadro); con 150k+ (Alto/Ultra) pasarlo a la GPU. Árboles/hierba distintos por especie y variedad de formas.
 - Lluvia fuerte prolongada inunda todo el bloque (paredes cerradas, tope de profundidad media 0,3); considerar evaporación o desagüe para un ciclo continuo.
+
+## Vegetation rework (2026-10-04)
+- Grass is now a procedural texture in `materials/jelly.ts` (lawn mottling on green, up-facing ground), no longer instanced geometry. Trade-off: grass no longer grows/withers with moisture. Idea: drive the lawn mask from the wetness field so dry ground looks yellower.
+- Trees: matte Lambert material, dark palette plus per-instance tonal variety, placed on a jittered lattice (~400 on Low). `GRASS` kind in `growth.ts` is now unused; remove if grass geometry never returns.
+- Tree wind sway not implemented.

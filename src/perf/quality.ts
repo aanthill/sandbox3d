@@ -11,7 +11,7 @@ export interface QualityTier {
   uiBlur: boolean;
   /** Splash droplet pool size. */
   splash: number;
-  /** Plant candidates (grass tufts + trees); CLAUDE.md quality table. */
+  /** Tree candidate spots (grass is a terrain texture, not geometry). */
   plants: number;
   /** Rain streak count. */
   rain: number;
@@ -22,10 +22,10 @@ export interface QualityTier {
  * it is the default and the target for modest GPUs.
  */
 export const TIERS: Record<TierId, QualityTier> = {
-  low: { plants: 15000, rain: 1200, splash: 300, id: 'low', label: 'Low', grid: 128, maxPixelRatio: 1, uiBlur: false },
-  medium: { plants: 50000, rain: 3000, splash: 900, id: 'medium', label: 'Medium', grid: 256, maxPixelRatio: 1.5, uiBlur: false },
-  high: { plants: 150000, rain: 6000, splash: 2000, id: 'high', label: 'High', grid: 512, maxPixelRatio: 2, uiBlur: true },
-  ultra: { plants: 300000, rain: 8000, splash: 2000, id: 'ultra', label: 'Ultra', grid: 1024, maxPixelRatio: 2, uiBlur: true },
+  low: { plants: 400, rain: 1200, splash: 300, id: 'low', label: 'Low', grid: 128, maxPixelRatio: 1, uiBlur: false },
+  medium: { plants: 625, rain: 3000, splash: 900, id: 'medium', label: 'Medium', grid: 256, maxPixelRatio: 1.5, uiBlur: false },
+  high: { plants: 4000, rain: 6000, splash: 2000, id: 'high', label: 'High', grid: 512, maxPixelRatio: 2, uiBlur: true },
+  ultra: { plants: 1225, rain: 8000, splash: 2000, id: 'ultra', label: 'Ultra', grid: 1024, maxPixelRatio: 2, uiBlur: true },
 };
 
 export const TIER_ORDER: readonly TierId[] = ['low', 'medium', 'high', 'ultra'];

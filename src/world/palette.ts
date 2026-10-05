@@ -20,10 +20,8 @@ export const PALETTE = {
   sky: 0xbcd8ff,
   rain: 0xcfe4ff,
   trunk: 0x8a5a3b,
-  leafDark: 0x1f9a4a,
-  leafLight: 0x8fe05a,
-  grassBase: 0x2f9a45,
-  grassTip: 0xa6ec5c,
+  leafDark: 0x0b3f26,
+  leafLight: 0x1c6a35,
   ground: 0x000000,
 } as const;
 

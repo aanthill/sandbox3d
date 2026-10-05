@@ -1,29 +1,30 @@
-import { Color, DynamicDrawUsage, Group, InstancedMesh, MeshStandardNodeMaterial, type BufferGeometry } from 'three/webgpu';
+import { Color, DynamicDrawUsage, Group, InstancedMesh, MeshLambertNodeMaterial, type BufferGeometry } from 'three/webgpu';
 import type { WaterSim } from '../sim/water';
 import { CHUNK, WORLD_SIZE, type Heightfield } from '../world/heightfield';
-import { GRASS, GROWTH, TREE, growthStep, makeRng, popScale, suitability, type PlantKind } from './growth';
-import { createGrassGeometry, createTreeGeometry } from './plant-geometry';
+import { GROWTH, TREE, growthStep, makeRng, popScale, suitability } from './growth';
+import { createTreeGeometry } from './plant-geometry';
 import { PLANT_POP } from '../anim/config';
 
 /** Each plant's growth is re-evaluated once every SLICES frames (spreads the work, rule 5/CPU budget). */
 const SLICES = 30;
 const SINK = 0.008; // roots sit slightly below the surface
-const TREE_SIZE = 1.7;
-const GRASS_SIZE = 1.6;
+const TREE_SIZE = 1.4;
+/** Candidate spots sit on a jittered lattice; wander is a fraction of the pitch so trees never crowd. */
+const JITTER = 0.3;
 const MIN_SHOWN = GROWTH.minSize;
 
 /**
- * Procedural vegetation: a fixed jittered scatter of candidate spots, drawn as two InstancedMeshes
- * (grass tufts and trees). Plants grow where the ground is flat, in the right height band and moist;
- * they wither when the spot stops suiting them and drown under water. They ride the jelly terrain.
+ * Procedural trees: a fixed jittered lattice of candidate spots drawn as one InstancedMesh. Trees grow
+ * where the ground is flat, in the right height band and moist; they wither when the spot stops suiting
+ * them and drown under water. They ride the jelly terrain. Grass is not geometry: it is a texture
+ * painted by the terrain material (materials/jelly.ts).
  */
 export class Plants {
   readonly group = new Group();
   readonly count: number;
   private readonly trees: InstancedMesh;
-  private readonly grass: InstancedMesh;
-  private readonly materials: MeshStandardNodeMaterial[] = [];
-  private readonly geos: BufferGeometry[] = [];
+  private readonly material = new MeshLambertNodeMaterial();
+  private readonly geo: BufferGeometry;
 
   private readonly px: Float32Array;
   private readonly pz: Float32Array;
@@ -33,10 +34,9 @@ export class Plants {
   private readonly threshold: Float32Array;
   private readonly g: Float32Array;
   private readonly age: Float32Array;
-  private readonly kind: Uint8Array;
-  private readonly slot: Uint32Array;
   private readonly chunk: Uint16Array;
-  private readonly range = new Float64Array(4);
+  private rangeLo = Infinity;
+  private rangeHi = -1;
   private readonly agingList: Uint32Array;
   private agingCount = 0;
   private readonly seedList: Uint32Array;
@@ -59,22 +59,18 @@ export class Plants {
     this.threshold = new Float32Array(count);
     this.g = new Float32Array(count);
     this.age = new Float32Array(count).fill(99);
-    this.kind = new Uint8Array(count);
-    this.slot = new Uint32Array(count);
     this.chunk = new Uint16Array(count);
     this.agingList = new Uint32Array(count);
     this.seedList = new Uint32Array(count);
 
-    let nTrees = 0;
-    let nGrass = 0;
     const side = Math.ceil(Math.sqrt(count));
-    const cell = WORLD_SIZE / side;
+    const pitch = WORLD_SIZE / side;
     const cps = hf.chunksPerSide;
     for (let i = 0; i < count; i++) {
       const cx = i % side;
       const cz = Math.floor(i / side);
-      const x = -WORLD_SIZE / 2 + (cx + 0.1 + rng() * 0.8) * cell;
-      const z = -WORLD_SIZE / 2 + (cz + 0.1 + rng() * 0.8) * cell;
+      const x = -WORLD_SIZE / 2 + (cx + 0.5 + (rng() - 0.5) * 2 * JITTER) * pitch;
+      const z = -WORLD_SIZE / 2 + (cz + 0.5 + (rng() - 0.5) * 2 * JITTER) * pitch;
       this.px[i] = x;
       this.pz[i] = z;
       const r = rng() * Math.PI * 2;
@@ -82,37 +78,26 @@ export class Plants {
       this.sinR[i] = Math.sin(r);
       this.size[i] = 0.75 + rng() * 0.5;
       this.threshold[i] = rng();
-      const k: PlantKind = rng() < GROWTH.treeShare ? TREE : GRASS;
-      this.kind[i] = k;
-      this.slot[i] = k === TREE ? nTrees++ : nGrass++;
       const gi = Math.min(hf.n - 1, Math.max(0, Math.round((x + WORLD_SIZE / 2) / hf.cell)));
       const gj = Math.min(hf.n - 1, Math.max(0, Math.round((z + WORLD_SIZE / 2) / hf.cell)));
       this.chunk[i] = Math.floor(gj / CHUNK) * cps + Math.floor(gi / CHUNK);
     }
 
-    const mat = (): MeshStandardNodeMaterial => {
-      const m = new MeshStandardNodeMaterial({ roughness: 0.5, metalness: 0 });
-      m.vertexColors = true;
-      this.materials.push(m);
-      return m;
-    };
+    // Matte (Lambert) material: no specular highlight and no glow at all.
     const treeGeo = createTreeGeometry();
-    const grassGeo = createGrassGeometry();
-    this.geos.push(treeGeo, grassGeo);
-    this.trees = new InstancedMesh(treeGeo, mat(), Math.max(1, nTrees));
-    this.grass = new InstancedMesh(grassGeo, mat(), Math.max(1, nGrass));
-    for (const m of [this.trees, this.grass]) {
-      m.instanceMatrix.setUsage(DynamicDrawUsage);
-      m.frustumCulled = false;
-      this.group.add(m);
-    }
+    this.geo = treeGeo;
+    this.material.vertexColors = true;
+    this.trees = new InstancedMesh(treeGeo, this.material, count);
+    this.trees.instanceMatrix.setUsage(DynamicDrawUsage);
+    this.trees.frustumCulled = false;
+    this.group.add(this.trees);
 
-    // Per-instance tint (mild brightness/hue variation on top of the vertex colors).
+    // Per-instance tint: wide tonal variety, from near-black pine to olive and bluish greens.
     const tint = new Color();
     for (let i = 0; i < count; i++) {
-      const v = 0.82 + rng() * 0.36;
-      tint.setRGB(v * (0.92 + rng() * 0.16), v, v * (0.9 + rng() * 0.2));
-      (this.kind[i] === TREE ? this.trees : this.grass).setColorAt(this.slot[i] as number, tint);
+      const v = 0.55 + rng() * 0.75;
+      tint.setRGB(v * (0.7 + rng() * 0.7), v * (0.85 + rng() * 0.3), v * (0.65 + rng() * 0.75));
+      this.trees.setColorAt(i, tint);
     }
 
     // Start already grown, so the world is green from the first frame (no pop-in at load).
@@ -120,13 +105,9 @@ export class Plants {
       const s = this.suit(i);
       this.g[i] = s > (this.threshold[i] as number) ? s : 0;
     }
-    this.trees.count = nTrees;
-    this.grass.count = nGrass;
     for (let i = 0; i < count; i++) this.writeMatrix(i);
     this.trees.instanceMatrix.needsUpdate = true;
-    this.grass.instanceMatrix.needsUpdate = true;
     if (this.trees.instanceColor) this.trees.instanceColor.needsUpdate = true;
-    if (this.grass.instanceColor) this.grass.instanceColor.needsUpdate = true;
   }
 
   // ---- environment sampling ----
@@ -148,17 +129,16 @@ export class Plants {
     const dx = (hf.heightAt(x + e, z) - h) / e;
     const dz = (hf.heightAt(x, z + e) - h) / e;
     const ny = 1 / Math.sqrt(dx * dx + 1 + dz * dz);
-    return suitability(this.kind[i] as PlantKind, h, ny, this.wetAt(x, z), this.water.depthAt(x, z));
+    return suitability(TREE, h, ny, this.wetAt(x, z), this.water.depthAt(x, z));
   }
 
   // ---- rendering ----
 
   private writeMatrix(i: number): void {
-    const mesh = this.kind[i] === TREE ? this.trees : this.grass;
-    const k = (this.slot[i] as number) * 16;
-    const a = mesh.instanceMatrix.array as Float32Array;
+    const k = i * 16;
+    const a = this.trees.instanceMatrix.array as Float32Array;
     const g = this.g[i] as number;
-    const shown = g < MIN_SHOWN ? 0 : g * popScale(this.age[i] as number) * (this.size[i] as number) * (this.kind[i] === TREE ? TREE_SIZE : GRASS_SIZE);
+    const shown = g < MIN_SHOWN ? 0 : g * popScale(this.age[i] as number) * (this.size[i] as number) * TREE_SIZE;
     const c = (this.cosR[i] as number) * shown;
     const s = (this.sinR[i] as number) * shown;
     const x = this.px[i] as number;
@@ -203,10 +183,8 @@ export class Plants {
     this.frame++;
     const hf = this.hf;
     const grow = dt * SLICES;
-    this.range[0] = Infinity; // trees min
-    this.range[1] = -1; //       trees max
-    this.range[2] = Infinity; // grass min
-    this.range[3] = -1; //       grass max
+    this.rangeLo = Infinity;
+    this.rangeHi = -1;
 
     // 1) Growth: every SLICES-th plant this frame.
     for (let i = this.frame % SLICES; i < this.count; i += SLICES) {
@@ -246,8 +224,7 @@ export class Plants {
       }
     }
 
-    if (this.range[1] >= 0) this.flag(this.trees, this.range[0] as number, this.range[1] as number);
-    if (this.range[3] >= 0) this.flag(this.grass, this.range[2] as number, this.range[3] as number);
+    if (this.rangeHi >= 0) this.flag(this.rangeLo, this.rangeHi);
   }
 
   private startPop(i: number): void {
@@ -258,23 +235,20 @@ export class Plants {
   /** Writes plant i's matrix and widens the dirty range of its mesh. */
   private write(i: number): void {
     this.writeMatrix(i);
-    const s = this.slot[i] as number;
-    const o = this.kind[i] === TREE ? 0 : 2;
-    if (s < (this.range[o] as number)) this.range[o] = s;
-    if (s > (this.range[o + 1] as number)) this.range[o + 1] = s;
+    if (i < this.rangeLo) this.rangeLo = i;
+    if (i > this.rangeHi) this.rangeHi = i;
   }
 
-  private flag(mesh: InstancedMesh, lo: number, hi: number): void {
-    const attr = mesh.instanceMatrix;
+  private flag(lo: number, hi: number): void {
+    const attr = this.trees.instanceMatrix;
     attr.clearUpdateRanges();
     attr.addUpdateRange(lo * 16, (hi - lo + 1) * 16);
     attr.needsUpdate = true;
   }
 
   dispose(): void {
-    for (const m of this.materials) m.dispose();
-    for (const g of this.geos) g.dispose();
+    this.material.dispose();
+    this.geo.dispose();
     this.trees.dispose();
-    this.grass.dispose();
   }
 }

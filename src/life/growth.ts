@@ -15,8 +15,6 @@ export const GROWTH = {
   witherRate: 0.05,
   /** Below this size a plant counts as not there. */
   minSize: 0.02,
-  /** Fraction of trees among all plant candidates. */
-  treeShare: 0.16,
 } as const;
 
 const smooth = (a: number, b: number, x: number): number => {
