@@ -246,3 +246,26 @@ describe('global rain', () => {
     expect(perStep).toBeLessThan(3);
   }, 120000);
 });
+
+describe('soft wetness', () => {
+  it('blurs the wet map so terrain tint has no square steps', () => {
+    const w = new WaterSim(bowl());
+    w.addVolume(0, 0, 0.5, 0.05);
+    run(w, 6);
+    w.softenWet(0, 0, w.n - 1, w.n - 1);
+    const maxStep = (a: Float32Array) => {
+      let m = 0;
+      for (let j = 0; j < w.n; j++) for (let i = 0; i < w.n - 1; i++) m = Math.max(m, Math.abs((a[j * w.n + i + 1] as number) - (a[j * w.n + i] as number)));
+      return m;
+    };
+    expect(maxStep(w.wetSoft)).toBeLessThan(maxStep(w.wet) * 0.6);
+    // Same total wetness (the blur only spreads it).
+    let a = 0;
+    let b = 0;
+    for (let k = 0; k < w.wet.length; k++) {
+      a += w.wet[k] as number;
+      b += w.wetSoft[k] as number;
+    }
+    expect(Math.abs(a - b) / a).toBeLessThan(0.05);
+  });
+});

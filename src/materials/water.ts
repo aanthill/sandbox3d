@@ -62,7 +62,9 @@ export function createWaterMaterial(): WaterMaterial {
     .mul(fresnel.mul(0.5))
     .add(shallow.mul(float(1).sub(k).mul(0.06)));
 
-  material.normalNode = normalize(normalView.add(vec3(w1.mul(0.04), w2.mul(0.04), 0)));
+  // Ripples fade out in thin water, where they only alias into a grid pattern.
+  const ripple = smoothstep(float(0.03), float(0.14), depth).mul(0.04);
+  material.normalNode = normalize(normalView.add(vec3(w1.mul(ripple), w2.mul(ripple), 0)));
 
   return {
     material,

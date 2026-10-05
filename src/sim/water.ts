@@ -55,6 +55,9 @@ export class WaterSim {
   readonly depth: Float32Array;
   readonly ground: Float32Array;
   readonly wet: Float32Array;
+  /** Blurred copy of `wet` used to tint the terrain (soft edges, no square cells). */
+  readonly wetSoft: Float32Array;
+  private softTmp = new Float32Array(0);
   private readonly fL: Float32Array;
   private readonly fR: Float32Array;
   private readonly fU: Float32Array;
@@ -96,6 +99,7 @@ export class WaterSim {
     this.depth = new Float32Array(len);
     this.ground = new Float32Array(len);
     this.wet = new Float32Array(len);
+    this.wetSoft = new Float32Array(len);
     this.fL = new Float32Array(len);
     this.fR = new Float32Array(len);
     this.fU = new Float32Array(len);
@@ -230,10 +234,70 @@ export class WaterSim {
 
   /** Wetness (0..1) for a *terrain* cell, sampled from the nearest water cell. */
   wetForTerrainCell(ti: number, tj: number): number {
-    if (this.hf.n === this.n) return this.wet[tj * this.n + ti] as number;
-    const i = Math.min(this.n - 1, Math.round(ti / this.hfRatio));
-    const j = Math.min(this.n - 1, Math.round(tj / this.hfRatio));
-    return this.wet[j * this.n + i] as number;
+    const n = this.n;
+    if (this.hf.n === n) return this.wetSoft[tj * n + ti] as number;
+    // Terrain finer than the water grid: bilinear sample of the softened field.
+    const gx = Math.min(n - 1.0001, ti / this.hfRatio);
+    const gy = Math.min(n - 1.0001, tj / this.hfRatio);
+    const x0 = Math.floor(gx);
+    const y0 = Math.floor(gy);
+    const fx = gx - x0;
+    const fy = gy - y0;
+    const w = this.wetSoft;
+    const a = w[y0 * n + x0] as number;
+    const b = w[y0 * n + x0 + 1] as number;
+    const c = w[(y0 + 1) * n + x0] as number;
+    const d = w[(y0 + 1) * n + x0 + 1] as number;
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+  }
+
+  /**
+   * Re-blurs `wetSoft` inside the inclusive water-cell rect (a 5-tap tent filter in both
+   * directions, ~2 cells of falloff). Call it before recoloring terrain there.
+   */
+  softenWet(i0: number, j0: number, i1: number, j1: number): void {
+    const n = this.n;
+    i0 = Math.max(0, i0);
+    j0 = Math.max(0, j0);
+    i1 = Math.min(n - 1, i1);
+    j1 = Math.min(n - 1, j1);
+    const w = i1 - i0 + 1;
+    if (w <= 0 || j1 < j0) return;
+    // Horizontal pass also covers 2 rows above/below the rect, so every output row sees its true neighbors.
+    const r0 = Math.max(0, j0 - 2);
+    const r1 = Math.min(n - 1, j1 + 2);
+    const rows = r1 - r0 + 1;
+    if (this.softTmp.length < w * rows) this.softTmp = new Float32Array(w * rows);
+    const tmp = this.softTmp;
+    const wet = this.wet;
+    for (let j = 0; j < rows; j++) {
+      const base = (r0 + j) * n;
+      for (let i = 0; i < w; i++) {
+        const ii = i0 + i;
+        const l2 = wet[base + (ii - 2 < 0 ? 0 : ii - 2)] as number;
+        const l1 = wet[base + (ii - 1 < 0 ? 0 : ii - 1)] as number;
+        const c0 = wet[base + ii] as number;
+        const r1v = wet[base + (ii + 1 > n - 1 ? n - 1 : ii + 1)] as number;
+        const r2v = wet[base + (ii + 2 > n - 1 ? n - 1 : ii + 2)] as number;
+        tmp[j * w + i] = (l2 + 2 * l1 + 3 * c0 + 2 * r1v + r2v) / 9;
+      }
+    }
+    const soft = this.wetSoft;
+    for (let jj = j0; jj <= j1; jj++) {
+      const row = (k: number): number => {
+        const y = jj + k;
+        return (y < r0 ? r0 : y > r1 ? r1 : y) - r0;
+      };
+      const o0 = row(-2) * w;
+      const o1 = row(-1) * w;
+      const o2 = row(0) * w;
+      const o3 = row(1) * w;
+      const o4 = row(2) * w;
+      for (let i = 0; i < w; i++) {
+        const v = ((tmp[o0 + i] as number) + 2 * (tmp[o1 + i] as number) + 3 * (tmp[o2 + i] as number) + 2 * (tmp[o3 + i] as number) + (tmp[o4 + i] as number)) / 9;
+        soft[jj * n + i0 + i] = v < 0.002 ? 0 : v;
+      }
+    }
   }
 
   /** Volume in world units cubed (from the last step). */

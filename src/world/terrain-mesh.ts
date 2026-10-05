@@ -226,10 +226,15 @@ export class TerrainMesh {
         water.wetDirty[wch] = 0;
         const wi0 = (wch % wcps) * CHUNK;
         const wj0 = Math.floor(wch / wcps) * CHUNK;
-        const i0 = Math.max(0, Math.floor(wi0 * k) - 1);
-        const i1 = Math.min(n - 1, Math.ceil(Math.min(water.n - 1, wi0 + CHUNK) * k) + 1);
-        const j0 = Math.max(0, Math.floor(wj0 * k) - 1);
-        const j1 = Math.min(n - 1, Math.ceil(Math.min(water.n - 1, wj0 + CHUNK) * k) + 1);
+        // The blur reaches 2 water cells outside the chunk; re-soften and recolor that padded rect.
+        const pad = 3;
+        const wi1 = Math.min(water.n - 1, wi0 + CHUNK - 1);
+        const wj1 = Math.min(water.n - 1, wj0 + CHUNK - 1);
+        water.softenWet(wi0 - pad, wj0 - pad, wi1 + pad, wj1 + pad);
+        const i0 = Math.max(0, Math.floor(Math.max(0, wi0 - pad) * k));
+        const i1 = Math.min(n - 1, Math.ceil(Math.min(water.n - 1, wi1 + pad) * k));
+        const j0 = Math.max(0, Math.floor(Math.max(0, wj0 - pad) * k));
+        const j1 = Math.min(n - 1, Math.ceil(Math.min(water.n - 1, wj1 + pad) * k));
         this.updateRegion(i0, i1, j0, j1, alpha);
         const lo = j0 * n + i0;
         const hi = j1 * n + i1;
