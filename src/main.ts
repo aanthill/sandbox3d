@@ -6,6 +6,7 @@ import {
   MeshStandardMaterial,
   PerspectiveCamera,
   Scene,
+  Vector2,
 } from 'three/webgpu';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { SIM_HZ, WORKING_COLORS } from './core/config';
@@ -63,8 +64,12 @@ async function start(): Promise<void> {
   const fixed = new FixedStep(SIM_HZ);
   const stepSeconds = fixed.stepMs / 1000;
 
+  const drawSize = new Vector2();
   const stats = new PerfStats();
-  const panel = new PerfPanel(stats, backend);
+  const panel = new PerfPanel(stats, backend, () => {
+    const size = renderer.getDrawingBufferSize(drawSize);
+    return `${size.x}x${size.y} (pr ${renderer.getPixelRatio().toFixed(2)})`;
+  });
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;

@@ -8,6 +8,7 @@ export class PerfPanel {
   constructor(
     private readonly stats: PerfStats,
     private readonly backendLabel: string,
+    private readonly getResolution: () => string,
     private readonly updateEveryMs = 250,
   ) {
     this.el = document.createElement('div');
@@ -18,8 +19,7 @@ export class PerfPanel {
       padding: '10px 12px',
       font: '12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
       color: '#e8ecf4',
-      background: 'rgba(20, 24, 34, 0.55)',
-      backdropFilter: 'blur(14px)',
+      background: 'rgba(20, 24, 34, 0.85)',
       border: '1px solid rgba(255, 255, 255, 0.14)',
       borderRadius: '12px',
       pointerEvents: 'none',
@@ -34,7 +34,7 @@ export class PerfPanel {
     this.lastUpdate = nowMs;
     const s = this.stats.snapshot();
     this.el.textContent =
-      `${this.backendLabel}\n` +
+      `${this.backendLabel}  ${this.getResolution()}\n` +
       `FPS      ${s.fps.toFixed(0)}\n` +
       `Frame    ${s.avgMs.toFixed(2)} ms\n` +
       `1% low   ${s.fps1Low.toFixed(0)} FPS\n` +
