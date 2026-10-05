@@ -7,6 +7,7 @@ import {
   Raycaster,
   Scene,
   Vector2,
+  Vector3,
   type WebGPURenderer,
 } from 'three/webgpu';
 import { terrainSpring } from './anim/spring';
@@ -72,6 +73,7 @@ export class App {
   private readonly ambient = new AmbientLight(0xffffff, 0.16);
   private readonly hemi = new HemisphereLight(0xbfd6ff, 0x1d1a38, 0.7);
   private hour = 10;
+  private readonly camForward = new Vector3();
   private autoDay = false;
   private fogAmount = 0;
   private rainAmount = 0;
@@ -473,6 +475,8 @@ export class App {
     this.mesh.group.position.y = Math.sin(this.simTime * 0.9) * BOB_AMPLITUDE;
     this.rig.apply(alpha);
     this.camera.updateMatrixWorld();
+    this.camera.getWorldDirection(this.camForward);
+    this.sky.update(frameMs / 1000, this.camForward);
     this.pick();
     this.mesh.update(alpha);
     this.waterMesh.update();
