@@ -103,11 +103,16 @@ html, body {
 .fog-layer {
   position: absolute; left: 0; top: 0;
   width: calc(100vw + var(--tile) * 2); height: calc(100vh + var(--tile) * 2);
-  mask-repeat: repeat; -webkit-mask-repeat: repeat;
   will-change: transform;
 }
+.fog-tex { position: absolute; inset: 0; mask-repeat: repeat; -webkit-mask-repeat: repeat; will-change: opacity; }
+.fog-tex-0 { animation: fog-fade-in 38s ease-in-out infinite alternate; }
+.fog-tex-1 { animation: fog-fade-out 38s ease-in-out infinite alternate; }
+.fog-layer-1 .fog-tex-0, .fog-layer-1 .fog-tex-1 { animation-duration: 53s; }
+@keyframes fog-fade-in { from { opacity: 0.1; } to { opacity: 1; } }
+@keyframes fog-fade-out { from { opacity: 1; } to { opacity: 0.1; } }
 .fog-layer-0 { animation: fog-drift-a 70s linear infinite; opacity: 0.9; }
 .fog-layer-1 { animation: fog-drift-b 110s linear infinite; opacity: 0.6; }
 @keyframes fog-drift-a { to { transform: translate3d(calc(var(--tile) * -1), calc(var(--tile) * -0.35), 0); } }
 @keyframes fog-drift-b { to { transform: translate3d(calc(var(--tile) * -1), calc(var(--tile) * 0.5), 0); } }
-@media (prefers-reduced-motion: reduce) { .fog-layer { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .fog-layer, .fog-tex { animation: none; } }

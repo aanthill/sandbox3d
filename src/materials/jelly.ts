@@ -36,9 +36,9 @@ export function createJellyMaterial(rimHex: number, glow = 0.7): JellyMaterial {
   const streakA = mx_noise_float(vec3(vec2(xz.x.mul(46), xz.y.mul(120)), 7.5));
   const streakB = mx_noise_float(vec3(vec2(xz.x.mul(120), xz.y.mul(46)), 11.5));
   const fine = streakA.add(streakB).mul(0.5);
-  const near = float(1).sub(smoothstep(float(3.5), float(8), positionView.z.negate()));
-  const tone = patches.mul(0.3).add(fine.mul(0.22).mul(near));
-  const lawn = vec3(float(1).add(tone.mul(0.7)), float(1).add(tone), float(1).add(tone.mul(0.25)));
+  const near = float(1).sub(smoothstep(float(5), float(11), positionView.z.negate()));
+  const tone = patches.mul(0.55).add(fine.mul(0.5).mul(near));
+  const lawn = vec3(float(1).add(tone.mul(0.7)), float(1).add(tone), float(1).add(tone.mul(0.3)));
   const lawnMix = greenness.mul(upFacing);
 
   // Sand: warm colors (red clearly above green). Fine grain plus soft wind ripples; 3D noise, so no stretching.
@@ -52,9 +52,9 @@ export function createJellyMaterial(rimHex: number, glow = 0.7): JellyMaterial {
   // Rock (and the strata walls): bluish colors. Coarse blotches, fine grain and dark crack veins.
   const rockMask = smoothstep(float(1.4), float(2.0), vc.b.div(vc.g.max(0.001)));
   const veins = smoothstep(float(0.88), float(0.99), float(1).sub(abs(mx_noise_float(p3.mul(20)))));
-  const rockTone = mx_noise_float(p3.mul(9)).mul(0.22)
-    .add(mx_noise_float(p3.mul(80)).mul(0.14).mul(near))
-    .sub(veins.mul(0.3));
+  const rockTone = mx_noise_float(p3.mul(9)).mul(0.3)
+    .add(mx_noise_float(p3.mul(80)).mul(0.2).mul(near))
+    .sub(veins.mul(0.4));
   const rock = vec3(float(1).add(rockTone), float(1).add(rockTone), float(1).add(rockTone.mul(0.8)));
 
   material.colorNode = mix(mix(mix(vec3(1, 1, 1), lawn, lawnMix), sand, sandMask), rock, rockMask);

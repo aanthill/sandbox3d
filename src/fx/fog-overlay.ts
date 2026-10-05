@@ -56,22 +56,29 @@ function tileableCloudMask(seed: number): string {
 
 export class FogOverlay {
   readonly root = document.createElement('div');
-  private readonly layers: HTMLDivElement[] = [];
+  private readonly texes: HTMLDivElement[] = [];
 
   constructor() {
     this.root.className = 'fog-overlay';
     const sizes = [DISPLAY, DISPLAY * 1.6];
-    [11, 29].forEach((seed, i) => {
-      const url = `url(${tileableCloudMask(seed)})`;
+    // Each drifting layer holds two different cloud textures that cross-fade slowly, so the
+    // wisps keep changing shape instead of just sliding by.
+    [[11, 53], [29, 71]].forEach(([s1, s2], i) => {
+      const size = sizes[i] as number;
       const layer = document.createElement('div');
       layer.className = `fog-layer fog-layer-${i}`;
-      const size = sizes[i] as number;
       layer.style.setProperty('--tile', `${size}px`);
-      layer.style.maskImage = url;
-      layer.style.setProperty('-webkit-mask-image', url);
-      layer.style.maskSize = `${size}px ${size}px`;
-      layer.style.setProperty('-webkit-mask-size', `${size}px ${size}px`);
-      this.layers.push(layer);
+      [s1, s2].forEach((seed, k) => {
+        const url = `url(${tileableCloudMask(seed as number)})`;
+        const tex = document.createElement('div');
+        tex.className = `fog-tex fog-tex-${k}`;
+        tex.style.maskImage = url;
+        tex.style.setProperty('-webkit-mask-image', url);
+        tex.style.maskSize = `${size}px ${size}px`;
+        tex.style.setProperty('-webkit-mask-size', `${size}px ${size}px`);
+        this.texes.push(tex);
+        layer.append(tex);
+      });
       this.root.append(layer);
     });
     this.set(0);
@@ -88,7 +95,7 @@ export class FogOverlay {
     // Linear -> sRGB-ish, and lifted toward white so the wisps stay luminous at night.
     const c = (v: number): number => Math.round(Math.min(1, Math.pow(v, 1 / 2.2) * 0.75 + 0.25) * 255);
     const css = `rgb(${c(r)},${c(g)},${c(b)})`;
-    for (const l of this.layers) l.style.backgroundColor = css;
+    for (const t of this.texes) t.style.backgroundColor = css;
   }
 
   dispose(): void {

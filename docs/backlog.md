@@ -32,3 +32,4 @@ Ideas que no entran en la fase actual. No implementar sin pedirlo.
 - Tree wind sway not implemented.
 - (2026-10-04) Trees back to clustered placement (user preference): ~2400 on Low. Sand and rock got procedural textures in `materials/jelly.ts` (3D noise: grain, ripples, cracks).
 - (2026-10-04) Fog is now a 2D screen overlay of drifting cloud wisps (`fx/fog-overlay.ts`), no longer 3D `FogExp2`. Day cycle starts ON by default. Idea: let fog thicken with rain/overcast automatically.
+- (2026-10-04) Grass/rock textures made stronger; fog layers cross-fade between two cloud textures (38s/53s) so wisps keep changing shape.
