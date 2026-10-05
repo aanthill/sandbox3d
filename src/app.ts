@@ -29,6 +29,7 @@ import { BRUSH_LIMITS, Sculptor, type BrushSettings } from './tools/brush';
 import { WATER_TOOL_TUNING, isWaterTool, type ToolId, type WaterToolId } from './tools/tools';
 import { Splash } from './fx/splash';
 import { Sky } from './fx/sky';
+import { Rain } from './fx/rain';
 import { computeDayState, createDayState } from './fx/daycycle';
 import { SKY_LIGHT } from './fx/sky-config';
 import { FountainMarkers } from './world/fountain-markers';
@@ -73,6 +74,8 @@ export class App {
   private hour = 10;
   private autoDay = false;
   private fogAmount = 0;
+  private rainAmount = 0;
+  private rain: Rain | null = null;
   private dayDirty = true;
   private readonly markers = new FountainMarkers();
   private splash: Splash | null = null;
@@ -141,6 +144,13 @@ export class App {
       hour: this.hour,
       auto: this.autoDay,
       fog: this.fogAmount,
+      rain: this.rainAmount,
+      onRain: (v) => {
+        this.rainAmount = v;
+        this.water.rainIntensity = v;
+        this.rain?.setAmount(v);
+        this.dayDirty = true;
+      },
       onHour: (h) => {
         this.hour = h;
         this.dayDirty = true;
@@ -212,6 +222,7 @@ export class App {
     this.dock?.updateHistory(this.history);
     this.scene.add(mesh.group);
     this.applySea();
+    water.rainIntensity = this.rainAmount;
     this.busy = false;
     this.dock?.setBusy(false);
   }
@@ -251,6 +262,13 @@ export class App {
       this.splash.dispose();
     }
     this.splash = new Splash(t.splash);
+    if (this.rain) {
+      this.scene.remove(this.rain.mesh);
+      this.rain.dispose();
+    }
+    this.rain = new Rain(t.rain);
+    this.rain.setAmount(this.rainAmount);
+    this.scene.add(this.rain.mesh);
     this.scene.add(this.splash.mesh);
     this.applyResolution(true);
   }
@@ -383,7 +401,7 @@ export class App {
 
   /** Pushes the current hour/fog into lights, sky and materials (only when something changed). */
   private applyDay(): void {
-    const d = computeDayState(this.hour, this.day);
+    const d = computeDayState(this.hour, this.day, this.rainAmount);
     const L = d.lightDir;
     this.sun.position.set((L[0] as number) * 7, (L[1] as number) * 7, (L[2] as number) * 7);
     this.sun.color.setRGB(d.lightColor[0] as number, d.lightColor[1] as number, d.lightColor[2] as number);

@@ -13,6 +13,8 @@ export interface DockOptions {
   hour: number;
   auto: boolean;
   fog: number;
+  rain: number;
+  onRain(v: number): void;
   onHour(h: number): void;
   onAuto(on: boolean): void;
   onFog(v: number): void;
@@ -150,6 +152,7 @@ export class Dock {
     autoText.textContent = 'Auto day cycle';
     autoWrap.append(autoBox, autoText);
     const fogS = slider('Fog', 0, 1, 0.01, o.fog, o.onFog);
+    const rainS = slider('Rain', 0, 1, 0.01, o.rain, o.onRain);
     const sea = slider('Sea level (0 = off)', 0, 1, 0.01, 0, o.onSea);
     const tierWrap = document.createElement('label');
     tierWrap.className = 'field';
@@ -168,7 +171,7 @@ export class Dock {
     const note = document.createElement('div');
     note.className = 'note';
     note.textContent = 'Lower the quality if it stutters. Higher levels use a finer terrain.';
-    this.settings.append(title, time.wrap, autoWrap, fogS.wrap, wob.wrap, glow.wrap, sea.wrap, tierWrap, note);
+    this.settings.append(title, time.wrap, autoWrap, fogS.wrap, rainS.wrap, wob.wrap, glow.wrap, sea.wrap, tierWrap, note);
     gear.addEventListener('click', () => {
       const open = this.settings.classList.toggle('hidden') === false;
       gear.setAttribute('aria-pressed', String(open));

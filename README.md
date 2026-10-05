@@ -4,7 +4,7 @@ A living 3D diorama floating in the void: sculpt terrain, make rain, open rivers
 
 > Working name. Plan: [`docs/plan.md`](docs/plan.md). Decisions and rules: [`CLAUDE.md`](CLAUDE.md).
 
-**Status:** Phase 2 (water, in progress). Phase 1 is done. A floating block of jelly-like terrain you can sculpt, with spring wobble, a fresnel-lit material, strata walls, an orbit camera, undo/redo, quality tiers and adaptive resolution. Rendering uses WebGPU and falls back to WebGL2 automatically.
+**Status:** Phase 2 (water) done pending your check; Phase 3 started: time of day, sky, fog and rain. Snow, storms and sound are not done yet. A floating block of jelly-like terrain you can sculpt, with spring wobble, a fresnel-lit material, strata walls, an orbit camera, undo/redo, quality tiers and adaptive resolution. Rendering uses WebGPU and falls back to WebGL2 automatically.
 
 ### Controls
 
@@ -19,7 +19,7 @@ A living 3D diorama floating in the void: sculpt terrain, make rain, open rivers
 | Shift (while sculpting) | Precision (weaker strength) |
 | Ctrl+Z / Ctrl+Shift+Z | Undo / redo (last 20 strokes) |
 
-The dock also has a dice button (new world) and settings: **Wobble**, **Glow**, **Sea level** (0 = off) and **Quality** (Low is the default; Ultra is experimental).
+The dock also has a dice button (new world) and settings: **Time of day** (+ auto day cycle), **Fog**, **Rain** (falls on the world and fills the water), **Wobble**, **Glow**, **Sea level** (0 = off) and **Quality** (Low is the default; Ultra is experimental).
 
 Debug URL switches: `?pr=1` (pixel ratio), `?webgl` (force WebGL2), `?debug` (exposes `window.__sandbox`).
 

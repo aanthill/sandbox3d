@@ -36,6 +36,7 @@ export function createWaterMaterial(): WaterMaterial {
 
   const depth = attribute('wdepth', 'float');
   const flow = attribute('wfoam', 'float');
+  const body = attribute('wedge', 'float');
 
   const material = new MeshStandardNodeMaterial({ roughness: 0.06, metalness: 0 });
   material.transparent = true;
@@ -55,15 +56,15 @@ export function createWaterMaterial(): WaterMaterial {
   // Shore foam: a band hugging the waterline that breathes in and out, with a lacy edge.
   const breathe = sin(time.mul(0.9).add(px.mul(7)).add(pz.mul(5))).mul(0.008).add(0.032);
   const band = smoothstep(breathe, float(0.004), depth); // 1 right at the edge
-  const shoreFoam = band.mul(smoothstep(float(0.18), float(0.5), lace.add(band.mul(0.45))));
+  const shoreFoam = band.mul(smoothstep(float(0.5), float(1.0), body)).mul(smoothstep(float(0.18), float(0.5), lace.add(band.mul(0.45))));
   // Flow foam: fast-moving water (rivers, waves after a pour) turns white-capped.
   const flowFoam = smoothstep(float(0.4), float(0.95), flow).mul(smoothstep(float(0.4), float(0.75), lace)).mul(smoothstep(float(0.02), float(0.08), depth));
   const foam = shoreFoam.max(flowFoam).saturate();
 
   // Opacity: fades out at the shoreline (but foam stays solid), denser with depth.
   const shore = smoothstep(float(0.0), float(0.03), depth);
-  const body = mix(float(0.55), float(0.94), smoothstep(float(0.0), float(0.45), depth));
-  material.opacityNode = shore.mul(body).max(foam.mul(0.95));
+  const dense = mix(float(0.55), float(0.94), smoothstep(float(0.0), float(0.45), depth));
+  material.opacityNode = shore.mul(dense).max(foam.mul(0.95));
 
   // Absorption color: bright turquoise shallows into a saturated, dark deep blue.
   const k = smoothstep(float(0.0), float(0.55), depth);

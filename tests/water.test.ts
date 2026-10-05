@@ -220,3 +220,29 @@ describe('WaterSim: terrain interaction', () => {
     expect(hi.sources.length).toBe(1);
   });
 });
+
+describe('global rain', () => {
+  it('adds about the configured volume and pools in the lowest places', () => {
+    const w = new WaterSim(bowl());
+    w.rainIntensity = 1;
+    run(w, 10);
+    w.measureVolume();
+    expect(w.volume).toBeGreaterThan(0.2);
+    expect(w.volume).toBeLessThan(0.28);
+    run(w, 40);
+    // Water ends up gathered near the center of the bowl, not spread as films.
+    expect(w.depthAt(0, 0)).toBeGreaterThan(w.depthAt(1.6, 1.6));
+  });
+
+  it('stays bounded (average depth cap) and cheap on real terrain', () => {
+    const w = new WaterSim(realTerrain());
+    w.rainIntensity = 1;
+    const t0 = performance.now();
+    run(w, 240);
+    const perStep = (performance.now() - t0) / (240 * 60);
+    expect(w.averageDepth).toBeLessThan(0.32);
+    expect(Number.isFinite(w.measureVolume())).toBe(true);
+    console.log('rain avg ms/step', perStep.toFixed(3), 'avg depth', w.averageDepth.toFixed(3));
+    expect(perStep).toBeLessThan(3);
+  }, 120000);
+});

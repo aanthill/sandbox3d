@@ -74,7 +74,7 @@ hexToLinear(SKY_LIGHT.hemiGround, GROUND);
 const TMP = new Float32Array(3);
 
 /** Fills `out` for an hour in [0, 24). Pure and deterministic. */
-export function computeDayState(hourIn: number, out: DayState): DayState {
+export function computeDayState(hourIn: number, out: DayState, overcast = 0): DayState {
   const hour = ((hourIn % 24) + 24) % 24;
   out.hour = hour;
 
@@ -123,5 +123,18 @@ export function computeDayState(hourIn: number, out: DayState): DayState {
   out.hemiGround.set(GROUND);
   out.hemiIntensity = SKY_LIGHT.hemiNight + (SKY_LIGHT.hemiDay - SKY_LIGHT.hemiNight) * dayAmt;
   out.ambientIntensity = SKY_LIGHT.ambientNight + (SKY_LIGHT.ambientDay - SKY_LIGHT.ambientNight) * dayAmt;
+
+  // Overcast (rain): desaturate the sky toward a gray and dim the direct light.
+  if (overcast > 0) {
+    const gray = (c: Float32Array): void => {
+      const l = 0.3 * (c[0] as number) + 0.55 * (c[1] as number) + 0.15 * (c[2] as number);
+      const g = l * 0.75;
+      for (let i = 0; i < 3; i++) c[i] = (c[i] as number) + (g - (c[i] as number)) * overcast * 0.7;
+    };
+    gray(out.zenith);
+    gray(out.horizon);
+    gray(out.hemiSky);
+    out.lightIntensity *= 1 - 0.55 * overcast;
+  }
   return out;
 }

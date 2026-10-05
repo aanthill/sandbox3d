@@ -13,6 +13,9 @@ export const WATER_TUNING = {
   /** Below this depth, flow is throttled (thin films creep). */
   dRef: 0.04,
 };
+/** Global rain: depth per second over the whole surface at intensity 1, spread over random cells. */
+const RAIN_DEPTH_RATE = 0.0015;
+const RAIN_HITS = 48;
 const EPS_DEPTH = 1e-5; // below this a cell counts as dry
 const MAX_DEPTH = 2.0;
 /** Sources pause when the average depth over the whole block reaches this. */
@@ -72,6 +75,9 @@ export class WaterSim {
   private readonly chunkSum: Float32Array;
 
   readonly sources: Source[] = [];
+  /** 0..1 weather rain; set by the app, applied in step(). */
+  rainIntensity = 0;
+  private rngState = 0x9e3779b9;
   /** Sum of all depths (volume = totalDepth * cell^2). */
   totalDepth = 0;
 
@@ -370,6 +376,22 @@ export class WaterSim {
     }
   }
 
+  /** Drops RAIN_HITS random heavy-ish drops per step (a tiny uniform film would just evaporate). */
+  private applyRain(dt: number): void {
+    const n = this.n;
+    const per = (RAIN_DEPTH_RATE * this.rainIntensity * dt * n * n) / RAIN_HITS;
+    for (let k = 0; k < RAIN_HITS; k++) {
+      let x = this.rngState;
+      x ^= x << 13;
+      x ^= x >>> 17;
+      x ^= x << 5;
+      this.rngState = x >>> 0;
+      const idx = this.rngState % (n * n);
+      this.depth[idx] = Math.min(MAX_DEPTH, (this.depth[idx] as number) + per);
+      this.wake(idx % n, (idx / n) | 0);
+    }
+  }
+
   // --------------------------------------------------------------- step
 
   step(dt: number): void {
@@ -381,6 +403,8 @@ export class WaterSim {
     if (this.averageDepth < MAX_AVG_DEPTH) {
       for (const s of this.sources) this.addVolume(s.x, s.z, SOURCE_RADIUS_CELLS * this.cell, s.rate * dt);
     }
+
+    if (this.rainIntensity > 0 && this.averageDepth < MAX_AVG_DEPTH) this.applyRain(dt);
 
     // Which chunks to simulate: every chunk with water, plus its 8 neighbours.
     const cps = this.cps;

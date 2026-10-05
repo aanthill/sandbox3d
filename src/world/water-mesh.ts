@@ -19,6 +19,7 @@ export class WaterMesh {
   private readonly nor: BufferAttribute;
   private readonly dep: BufferAttribute;
   private readonly foam: BufferAttribute;
+  private readonly edge: BufferAttribute;
   private readonly skirtPos: BufferAttribute;
   private readonly skirtDep: BufferAttribute;
   private readonly geos: BufferGeometry[] = [];
@@ -33,6 +34,7 @@ export class WaterMesh {
     const normals = new Float32Array(count * 3);
     const depths = new Float32Array(count);
     const foams = new Float32Array(count);
+    const edges = new Float32Array(count);
     for (let j = 0; j < n; j++) {
       for (let i = 0; i < n; i++) {
         const o = (j * n + i) * 3;
@@ -67,6 +69,8 @@ export class WaterMesh {
     geo.setAttribute('wdepth', this.dep);
     this.foam = new BufferAttribute(foams, 1);
     geo.setAttribute('wfoam', this.foam);
+    this.edge = new BufferAttribute(edges, 1);
+    geo.setAttribute('wedge', this.edge);
     geo.setIndex(new BufferAttribute(indices, 1));
     this.geos.push(geo);
     const surface = new Mesh(geo, material);
@@ -129,6 +133,7 @@ export class WaterMesh {
     skGeo.setAttribute('normal', new BufferAttribute(sNor, 3));
     skGeo.setAttribute('wdepth', this.skirtDep);
     skGeo.setAttribute('wfoam', new BufferAttribute(new Float32Array(sv), 1));
+    skGeo.setAttribute('wedge', new BufferAttribute(new Float32Array(sv), 1));
     skGeo.setIndex(new BufferAttribute(sIdx, 1));
     this.geos.push(skGeo);
     const skirts = new Mesh(skGeo, material);
@@ -176,6 +181,9 @@ export class WaterMesh {
     this.foam.clearUpdateRanges();
     this.foam.addUpdateRange(minIdx, maxIdx - minIdx + 1);
     this.foam.needsUpdate = true;
+    this.edge.clearUpdateRanges();
+    this.edge.addUpdateRange(minIdx, maxIdx - minIdx + 1);
+    this.edge.needsUpdate = true;
     this.updateSkirts();
     return true;
   }
@@ -191,6 +199,7 @@ export class WaterMesh {
     const nor = this.nor.array as Float32Array;
     const dep = this.dep.array as Float32Array;
     const foam = this.foam.array as Float32Array;
+    const edge = this.edge.array as Float32Array;
     const inv2c = 1 / (2 * w.cell);
 
     for (let j = j0; j <= j1; j++) {
@@ -205,6 +214,16 @@ export class WaterMesh {
         pos[idx * 3 + 1] = d > 0 ? g + d : g - HIDE;
         dep[idx] = d;
         foam[idx] = Math.min(1, w.flowSpeed(idx) * FOAM_SCALE);
+        // How much real water body is nearby (3 cells out): thin rain films get no shore foam.
+        let body = d;
+        for (let r = 1; r <= 3; r++) {
+          const a = w.depth[j * n + Math.min(n - 1, i + r)] as number;
+          const b2 = w.depth[j * n + Math.max(0, i - r)] as number;
+          const c = w.depth[Math.min(n - 1, j + r) * n + i] as number;
+          const e = w.depth[Math.max(0, j - r) * n + i] as number;
+          body = Math.max(body, a, b2, c, e);
+        }
+        edge[idx] = Math.min(1, body / 0.05);
         const dx = (this.surface(j * n + ip) - this.surface(j * n + im)) * inv2c * (2 / (ip - im || 1));
         const dz = (this.surface(jp * n + i) - this.surface(jm * n + i)) * inv2c * (2 / (jp - jm || 1));
         const len = Math.sqrt(dx * dx + 1 + dz * dz);

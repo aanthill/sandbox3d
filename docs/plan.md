@@ -234,6 +234,8 @@ Cuadrícula de 256x256 (Medio), 512x512 (Alto) o 1024x1024 (Ultra), ajustable. C
 
 ### Fase 3: Clima y ciclo día/noche
 
+> **Estado:** primera parte hecha (hora del día + auto, cielo con sol/luna/estrellas, niebla, lluvia que alimenta el agua). Resto (nieve, tormenta, viento, nubes, sonido) en backlog.
+
 - Sol y luna con deslizador de hora; cielo con degradado y estrellas; IBL coherente con la hora.
 - Lluvia con instancias que alimenta el agua; nieve que se acumula; viento visible; tormenta con relámpagos; niebla; nubes con sombras.
 - Post-procesado completo y sonidos ambientales; transiciones suaves.
