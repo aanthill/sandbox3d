@@ -44,7 +44,7 @@ export class App {
   private readonly scene = new Scene();
   private readonly camera = new PerspectiveCamera(42, 1, 0.1, 60);
   private readonly rig = new CameraRig(this.camera);
-  private readonly sun = new DirectionalLight(0xffffff, 2.3);
+  private readonly sun = new DirectionalLight(0xfff1dc, 2.8);
   private readonly jelly: JellyMaterial = createJellyMaterial(PALETTE.rim);
   private readonly ring = new BrushRing(0xffffff);
   private readonly fixed = new FixedStep(SIM_HZ);
@@ -93,8 +93,8 @@ export class App {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
 
-    scene.add(new AmbientLight(0xffffff, 0.3));
-    scene.add(new HemisphereLight(0xd6e4ff, 0x2a2f45, 0.9));
+    scene.add(new AmbientLight(0xffffff, 0.16));
+    scene.add(new HemisphereLight(0xbfd6ff, 0x1d1a38, 0.7));
     this.sun.position.set(3.2, 5.5, 2.4);
     this.sun.shadow.camera.left = -3.4;
     this.sun.shadow.camera.right = 3.4;

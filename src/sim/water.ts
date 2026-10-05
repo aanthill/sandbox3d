@@ -277,6 +277,13 @@ export class WaterSim {
     }
   }
 
+  /** Approximate flow speed at a cell (cells per second): total outflow over depth. Drives foam. */
+  flowSpeed(idx: number): number {
+    const d = this.depth[idx] as number;
+    if (d <= 0) return 0;
+    return ((this.fL[idx] as number) + (this.fR[idx] as number) + (this.fU[idx] as number) + (this.fD[idx] as number)) / Math.max(d, 0.02);
+  }
+
   /** Removes water in a disc: proportional drain plus a small constant so thin films vanish. */
   drain(x: number, z: number, radius: number, rate: number, dt: number): void {
     const r = this.rect;
