@@ -1,6 +1,6 @@
 import { SPRING_CONFIG } from '../anim/config';
 import { BRUSH_LIMITS, type BrushSettings } from '../tools/brush';
-import { TERRAIN_TOOLS, WATER_TOOLS, TOOL_IDS, type ToolId } from '../tools/tools';
+import { TERRAIN_TOOLS, WATER_TOOLS, LIFE_TOOLS, TOOL_IDS, type ToolId } from '../tools/tools';
 import type { History } from '../tools/history';
 import { TIER_ORDER, TIERS, type TierId } from '../perf/quality';
 
@@ -38,6 +38,7 @@ const ICONS: Record<string, string> = {
   fountain: '<path d="M12 20v-7"/><path d="M12 13c0-4-4-5-6-8M12 13c0-4 4-5 6-8"/><path d="M6 20h12"/>',
   rain: '<path d="M7 14a4 4 0 0 1 1-7.900 5 5 0 0 1 9.500 1.400A3.300 3.300 0 0 1 17 14z"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>',
   drain: '<path d="M12 4v10m-4-4 4 4 4-4"/><path d="M5 19h14"/>',
+  seed: '<path d="M12 21v-8"/><path d="M12 13c0-4 3-6 7-6 0 4-3 6-7 6z"/><path d="M12 16c0-3-2-5-6-5 0 3 2 5 6 5z"/>',
   undo: '<path d="M9 7 4 12l5 5"/><path d="M4 12h9a6 6 0 0 1 0 12"/>',
   redo: '<path d="m15 7 5 5-5 5"/><path d="M20 12h-9a6 6 0 0 0 0 12"/>',
   dice: '<rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/><circle cx="9" cy="15" r="1" fill="currentColor"/>',
@@ -52,6 +53,7 @@ const TOOL_LABEL: Record<ToolId, string> = {
   fountain: 'Fountain (click to place / remove)',
   rain: 'Rain (hold)',
   drain: 'Drain (hold)',
+  seed: 'Seeds (hold to scatter)',
 };
 
 function svg(name: string): string {
@@ -105,7 +107,7 @@ export class Dock {
     this.root.setAttribute('role', 'toolbar');
 
     const sep = () => Object.assign(document.createElement('div'), { className: 'sep' });
-    for (const group of [TERRAIN_TOOLS, WATER_TOOLS]) {
+    for (const group of [TERRAIN_TOOLS, WATER_TOOLS, LIFE_TOOLS]) {
       for (const id of group) {
         const b = button(id, `${TOOL_LABEL[id]} (${TOOL_IDS.indexOf(id) + 1})`);
         b.addEventListener('click', () => o.onTool(id));
@@ -181,7 +183,7 @@ export class Dock {
 
     const hint = document.createElement('div');
     hint.className = 'hint';
-    hint.innerHTML = 'Left drag: sculpt<br>Right drag: orbit · Wheel: zoom<br>1–7 tools · [ ] size<br>Water: hold to pour · click to place a fountain';
+    hint.innerHTML = 'Left drag: sculpt<br>Right drag: orbit · Wheel: zoom<br>1–8 tools · [ ] size<br>Water: hold to pour · click to place a fountain';
 
     document.body.append(this.root, this.settings, this.toast, hint);
     this.updateHistory(null);

@@ -1,12 +1,14 @@
 import type { TerrainToolId } from './brush';
 
 export type WaterToolId = 'pour' | 'fountain' | 'rain' | 'drain';
-export type ToolId = TerrainToolId | WaterToolId;
+export type LifeToolId = 'seed';
+export type ToolId = TerrainToolId | WaterToolId | LifeToolId;
 
-/** Dock order; keys 1..7 select by position. */
+/** Dock order; keys 1..8 select by position. */
 export const TERRAIN_TOOLS: readonly TerrainToolId[] = ['raise', 'lower', 'flatten'];
 export const WATER_TOOLS: readonly WaterToolId[] = ['pour', 'fountain', 'rain', 'drain'];
-export const TOOL_IDS: readonly ToolId[] = [...TERRAIN_TOOLS, ...WATER_TOOLS];
+export const LIFE_TOOLS: readonly LifeToolId[] = ['seed'];
+export const TOOL_IDS: readonly ToolId[] = [...TERRAIN_TOOLS, ...WATER_TOOLS, ...LIFE_TOOLS];
 
 export function isWaterTool(t: ToolId): t is WaterToolId {
   return (WATER_TOOLS as readonly string[]).includes(t);
@@ -23,3 +25,7 @@ export const WATER_TOOL_TUNING = {
   /** Click distance (world units) to remove an existing fountain. */
   fountainPickRadius: 0.25,
 } as const;
+
+export function isLifeTool(t: ToolId): t is LifeToolId {
+  return (LIFE_TOOLS as readonly string[]).includes(t);
+}

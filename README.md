@@ -4,7 +4,7 @@ A living 3D diorama floating in the void: sculpt terrain, make rain, open rivers
 
 > Working name. Plan: [`docs/plan.md`](docs/plan.md). Decisions and rules: [`CLAUDE.md`](CLAUDE.md).
 
-**Status:** Phase 2 (water) done pending your check; Phase 3 started: time of day, sky, fog and rain. Snow, storms and sound are not done yet. A floating block of jelly-like terrain you can sculpt, with spring wobble, a fresnel-lit material, strata walls, an orbit camera, undo/redo, quality tiers and adaptive resolution. Rendering uses WebGPU and falls back to WebGL2 automatically.
+**Status:** Phase 2 (water) done pending your check; Phase 3 started: time of day, sky, fog and rain (snow, storms and sound are not done yet). Phase 5 started: grass and trees that grow where it is flat and moist, wither and drown, and a seeds tool. A floating block of jelly-like terrain you can sculpt, with spring wobble, a fresnel-lit material, strata walls, an orbit camera, undo/redo, quality tiers and adaptive resolution. Rendering uses WebGPU and falls back to WebGL2 automatically.
 
 ### Controls
 
@@ -15,6 +15,7 @@ A living 3D diorama floating in the void: sculpt terrain, make rain, open rivers
 | Wheel | Zoom |
 | `1`–`3` | Raise · Lower · Flatten |
 | `4`–`7` | Pour (hold) · Fountain (click to place/remove, max 8) · Rain (hold) · Drain (hold) |
+| `8` | Seeds (hold to scatter plants) |
 | `[` `]` | Brush size |
 | Shift (while sculpting) | Precision (weaker strength) |
 | Ctrl+Z / Ctrl+Shift+Z | Undo / redo (last 20 strokes) |

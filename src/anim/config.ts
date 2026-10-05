@@ -26,5 +26,8 @@ export const SPRING_CONFIG = {
   },
 } as const;
 
+/** Elastic pop when a plant sprouts: scale = 1 - exp(-decay*t) * cos(freq*t), done after `duration` seconds. */
+export const PLANT_POP = { duration: 1.5, decay: 5, freq: 13 } as const;
+
 /** Default wobble (0..100); 0 when the user prefers reduced motion. */
 export const DEFAULT_WOBBLE = 70;

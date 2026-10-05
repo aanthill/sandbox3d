@@ -19,6 +19,11 @@ export const PALETTE = {
   waterDeep: 0x0b3cc4,
   sky: 0xbcd8ff,
   rain: 0xcfe4ff,
+  trunk: 0x8a5a3b,
+  leafDark: 0x1f9a4a,
+  leafLight: 0x8fe05a,
+  grassBase: 0x2f9a45,
+  grassTip: 0xa6ec5c,
   ground: 0x000000,
 } as const;
 

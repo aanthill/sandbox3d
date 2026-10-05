@@ -252,6 +252,8 @@ Cuadrícula de 256x256 (Medio), 512x512 (Alto) o 1024x1024 (Ultra), ajustable. C
 
 ### Fase 5: Vida
 
+> **Estado:** primera parte hecha (hierba y árboles instanciados, crecen por humedad/altura/pendiente, mueren ahogados, brotan con rebote elástico, herramienta de semillas, cantidad por nivel de calidad). Pendiente en backlog: fuego, estaciones, criaturas luminosas, balanceo por viento, LOD.
+
 - Vegetación procedural con instancias; crece según humedad, altura y pendiente; estaciones.
 - Fuego que se propaga, deja ceniza y rebrota.
 - Criaturas luminosas (luciérnagas, peces, pájaros) con bandadas; bioluminiscencia al anochecer.

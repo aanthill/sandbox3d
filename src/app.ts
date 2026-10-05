@@ -27,10 +27,11 @@ import { PerfStats } from './perf/stats';
 import { TIERS, loadTier, saveTier, type TierId } from './perf/quality';
 import { BrushRing } from './tools/brush-ring';
 import { BRUSH_LIMITS, Sculptor, type BrushSettings } from './tools/brush';
-import { WATER_TOOL_TUNING, isWaterTool, type ToolId, type WaterToolId } from './tools/tools';
+import { WATER_TOOL_TUNING, isWaterTool, isLifeTool, type ToolId, type WaterToolId } from './tools/tools';
 import { Splash } from './fx/splash';
 import { Sky } from './fx/sky';
 import { Rain } from './fx/rain';
+import { Plants } from './life/plants';
 import { computeDayState, createDayState } from './fx/daycycle';
 import { SKY_LIGHT } from './fx/sky-config';
 import { FountainMarkers } from './world/fountain-markers';
@@ -66,6 +67,7 @@ export class App {
   private mesh!: TerrainMesh;
   private water!: WaterSim;
   private waterMesh!: WaterMesh;
+  private plants!: Plants;
   private readonly waterMat = createWaterMaterial();
   private readonly sky = new Sky();
   private readonly day = createDayState();
@@ -199,6 +201,9 @@ export class App {
     const waterMesh = new WaterMesh(water, this.waterMat.material);
     mesh.setWater(water);
     mesh.group.add(waterMesh.group);
+    water.softenWet(0, 0, water.n - 1, water.n - 1);
+    const plants = new Plants(hf, water, TIERS[this.tier].plants, this.seed);
+    mesh.group.add(plants.group);
     waterMesh.update();
     mesh.update(1); // first fill happens here, while the "building" notice is up
 
@@ -206,10 +211,12 @@ export class App {
       this.scene.remove(this.mesh.group);
       this.mesh.dispose();
       this.waterMesh.dispose();
+      this.plants.dispose();
     }
     this.hf = hf;
     this.water = water;
     this.waterMesh = waterMesh;
+    this.plants = plants;
     this.mesh = mesh;
     this.sculptor = new Sculptor(hf);
     this.history.clear();
@@ -326,6 +333,7 @@ export class App {
 
   private beginStroke(): boolean {
     if (this.busy || !this.hasHit) return false;
+    if (isLifeTool(this.tool)) return true;
     if (isWaterTool(this.tool)) {
       if (this.tool === 'fountain') {
         const T = WATER_TOOL_TUNING;
@@ -341,7 +349,7 @@ export class App {
   }
 
   private endStroke(): void {
-    if (isWaterTool(this.tool)) return;
+    if (isWaterTool(this.tool) || isLifeTool(this.tool)) return;
     const stroke = this.sculptor.endStroke();
     if (stroke) {
       this.history.push(stroke);
@@ -440,7 +448,8 @@ export class App {
     for (let i = 0; i < steps; i++) {
       if (this.input.sculpting && this.hasHit && !this.busy) {
         const tool = this.tool;
-        if (isWaterTool(tool)) this.useWaterTool(tool, dt);
+        if (isLifeTool(tool)) this.plants.seed(this.hit.x, this.hit.z, this.brush.radius);
+        else if (isWaterTool(tool)) this.useWaterTool(tool, dt);
         else {
           const b = this.input.shift ? { ...this.brush, strength: this.brush.strength * 0.35 } : this.brush;
           this.sculptor.apply(tool, this.hit.x, this.hit.z, b, dt);
@@ -465,6 +474,7 @@ export class App {
     this.pick();
     this.mesh.update(alpha);
     this.waterMesh.update();
+    this.plants.update(frameMs / 1000);
     this.splash?.update();
     this.markers.group.position.y = this.mesh.group.position.y;
     if (this.splash) this.splash.mesh.position.y = this.mesh.group.position.y;

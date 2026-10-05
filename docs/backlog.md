@@ -22,3 +22,6 @@ Ideas que no entran en la fase actual. No implementar sin pedirlo.
 - Iluminación nocturna: estrellas solo se ven mirando al horizonte; añadir brillo de luna/estrellas visibles desde arriba si se quiere.
 - Espuma del agua: quitada por pedido del usuario (se veía como píxeles blancos). Si se retoma, hacerla como textura suave o partículas, no por patrón en el shader.
 - Sombras proyectadas suaves (si se quieren de vuelta): mapa de sombras con PCF/VSM y radio de desenfoque, solo en Alto/Ultra. Hoy no hay sombras del sol; la profundidad viene de AO horneada en vértices (refresco completo del terreno ~7 ms en CPU en el peor caso; normal al esculpir: unos pocos chunks).
+- Vida (Fase 5, aplazado): fuego que se propaga (depende de los desastres), estaciones, criaturas luminosas (luciérnagas/peces/pájaros), balanceo de plantas por viento (hoy no se mueven salvo con el terreno), LOD y cantidad dinámica de plantas según FPS.
+- Plantas: el crecimiento corre en CPU por rebanadas (1/30 de las plantas por cuadro); con 150k+ (Alto/Ultra) pasarlo a la GPU. Árboles/hierba distintos por especie y variedad de formas.
+- Lluvia fuerte prolongada inunda todo el bloque (paredes cerradas, tope de profundidad media 0,3); considerar evaporación o desagüe para un ciclo continuo.
