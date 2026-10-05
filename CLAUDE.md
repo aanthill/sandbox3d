@@ -91,6 +91,7 @@ public/       audio, iconos, mundos de ejemplo
 
 ## Reglas de trabajo
 
+- **El plan no es sagrado:** `docs/plan.md` es una guía, no un contrato. Si una tarea del plan no es rentable (mucho costo/tiempo/rendimiento para poco efecto visible o de juego), se simplifica, se aplaza o se omite, y se anota en `docs/backlog.md` con la razón. Se avisa en el resumen de la sesión. (Decisión del usuario, 2026-10-04.)
 - No cambiar la arquitectura ni las decisiones de este archivo sin avisar.
 - Una tarea por sesión, con criterios verificables; commits pequeños y un resumen de qué cambió y cómo probarlo.
 - Tocar solo el alcance pedido. Ideas nuevas van a `docs/backlog.md` (lista de "para después"), no al código.
