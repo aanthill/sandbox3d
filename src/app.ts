@@ -1,6 +1,7 @@
 import {
   AmbientLight,
   DirectionalLight,
+  FogExp2,
   HemisphereLight,
   PerspectiveCamera,
   Raycaster,
@@ -27,6 +28,9 @@ import { BrushRing } from './tools/brush-ring';
 import { BRUSH_LIMITS, Sculptor, type BrushSettings } from './tools/brush';
 import { WATER_TOOL_TUNING, isWaterTool, type ToolId, type WaterToolId } from './tools/tools';
 import { Splash } from './fx/splash';
+import { Sky } from './fx/sky';
+import { computeDayState, createDayState } from './fx/daycycle';
+import { SKY_LIGHT } from './fx/sky-config';
 import { FountainMarkers } from './world/fountain-markers';
 import { History } from './tools/history';
 import { Dock } from './ui/dock';
@@ -42,7 +46,7 @@ const BOB_AMPLITUDE = 0.035;
 
 export class App {
   private readonly scene = new Scene();
-  private readonly camera = new PerspectiveCamera(42, 1, 0.1, 60);
+  private readonly camera = new PerspectiveCamera(42, 1, 0.1, 100);
   private readonly rig = new CameraRig(this.camera);
   private readonly sun = new DirectionalLight(0xfff1dc, 2.8);
   private readonly jelly: JellyMaterial = createJellyMaterial(PALETTE.rim);
@@ -60,7 +64,16 @@ export class App {
   private mesh!: TerrainMesh;
   private water!: WaterSim;
   private waterMesh!: WaterMesh;
-  private readonly waterMaterial = createWaterMaterial();
+  private readonly waterMat = createWaterMaterial();
+  private readonly sky = new Sky();
+  private readonly day = createDayState();
+  private readonly fog = new FogExp2(0x000000, 0);
+  private readonly ambient = new AmbientLight(0xffffff, 0.16);
+  private readonly hemi = new HemisphereLight(0xbfd6ff, 0x1d1a38, 0.7);
+  private hour = 10;
+  private autoDay = false;
+  private fogAmount = 0;
+  private dayDirty = true;
   private readonly markers = new FountainMarkers();
   private splash: Splash | null = null;
   private seaSlider = 0;
@@ -93,9 +106,8 @@ export class App {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
 
-    scene.add(new AmbientLight(0xffffff, 0.16));
-    scene.add(new HemisphereLight(0xbfd6ff, 0x1d1a38, 0.7));
-    this.sun.position.set(3.2, 5.5, 2.4);
+    scene.add(this.ambient, this.hemi, this.sky.mesh);
+    scene.fog = this.fog;
     this.sun.shadow.camera.left = -3.4;
     this.sun.shadow.camera.right = 3.4;
     this.sun.shadow.camera.top = 3.4;
@@ -126,6 +138,18 @@ export class App {
       onWobble: (w) => (this.wobble = w),
       onGlow: (g) => this.jelly.setGlow(g),
       onSea: (v) => this.setSea(v),
+      hour: this.hour,
+      auto: this.autoDay,
+      fog: this.fogAmount,
+      onHour: (h) => {
+        this.hour = h;
+        this.dayDirty = true;
+      },
+      onAuto: (on) => (this.autoDay = on),
+      onFog: (v) => {
+        this.fogAmount = v;
+        this.dayDirty = true;
+      },
       onUndo: () => this.undo(),
       onRedo: () => this.redo(),
       onNewWorld: () => void this.newWorld(),
@@ -168,7 +192,7 @@ export class App {
     const mesh = new TerrainMesh(hf, this.jelly.material, this.jelly.material);
     const water = new WaterSim(hf);
     if (keepWater) water.copyFrom(keepWater);
-    const waterMesh = new WaterMesh(water, this.waterMaterial);
+    const waterMesh = new WaterMesh(water, this.waterMat.material);
     mesh.setWater(water);
     mesh.group.add(waterMesh.group);
     waterMesh.update();
@@ -357,6 +381,23 @@ export class App {
     );
   }
 
+  /** Pushes the current hour/fog into lights, sky and materials (only when something changed). */
+  private applyDay(): void {
+    const d = computeDayState(this.hour, this.day);
+    const L = d.lightDir;
+    this.sun.position.set((L[0] as number) * 7, (L[1] as number) * 7, (L[2] as number) * 7);
+    this.sun.color.setRGB(d.lightColor[0] as number, d.lightColor[1] as number, d.lightColor[2] as number);
+    this.sun.intensity = d.lightIntensity;
+    this.hemi.color.setRGB(d.hemiSky[0] as number, d.hemiSky[1] as number, d.hemiSky[2] as number);
+    this.hemi.groundColor.setRGB(d.hemiGround[0] as number, d.hemiGround[1] as number, d.hemiGround[2] as number);
+    this.hemi.intensity = d.hemiIntensity;
+    this.ambient.intensity = d.ambientIntensity;
+    this.sky.apply(d);
+    this.fog.color.setRGB(d.horizon[0] as number, d.horizon[1] as number, d.horizon[2] as number);
+    this.fog.density = this.fogAmount * this.fogAmount * SKY_LIGHT.maxFogDensity;
+    this.waterMat.setSky(d.horizon[0] as number, d.horizon[1] as number, d.horizon[2] as number);
+  }
+
   private emitFountainSplash(): void {
     const src = this.water.sources;
     if (src.length === 0 || this.simTick++ % 3 !== 0) return;
@@ -376,6 +417,16 @@ export class App {
     if (this.adaptive.push(frameMs)) {
       this.resolutionScale = this.adaptive.scale;
       this.applyResolution();
+    }
+
+    if (this.autoDay) {
+      this.hour = (this.hour + (frameMs / 1000) * SKY_LIGHT.autoDaysPerSecond * 24) % 24;
+      this.dock.setHour(this.hour);
+      this.dayDirty = true;
+    }
+    if (this.dayDirty) {
+      this.dayDirty = false;
+      this.applyDay();
     }
 
     const dt = this.fixed.stepMs / 1000;

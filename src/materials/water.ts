@@ -22,7 +22,13 @@ import { PALETTE } from '../world/palette';
  * animated ripples in the normal. Reads the per-vertex `wdepth` attribute.
  * Screen-space refraction and caustics are left for later (docs/backlog.md).
  */
-export function createWaterMaterial(): MeshStandardNodeMaterial {
+export interface WaterMaterial {
+  material: MeshStandardNodeMaterial;
+  /** Linear RGB of the sky color reflected at grazing angles. */
+  setSky(r: number, g: number, b: number): void;
+}
+
+export function createWaterMaterial(): WaterMaterial {
   const shallow = uniform(new Color(PALETTE.waterShallow));
   const deep = uniform(new Color(PALETTE.waterDeep));
   const foamColor = uniform(new Color(PALETTE.foam));
@@ -74,5 +80,10 @@ export function createWaterMaterial(): MeshStandardNodeMaterial {
 
   material.normalNode = normalize(normalView.add(vec3(w1.mul(0.04), w2.mul(0.04), 0)));
 
-  return material;
+  return {
+    material,
+    setSky(r, g, b) {
+      (sky.value as Color).setRGB(r, g, b);
+    },
+  };
 }

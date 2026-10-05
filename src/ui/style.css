@@ -63,6 +63,8 @@ html, body {
 
 .field { display: grid; gap: 2px; min-width: 92px; padding: 0 4px; color: var(--ui-dim); font-size: 11px; letter-spacing: 0.02em; }
 .field input[type='range'] { width: 100%; accent-color: var(--ui-accent); margin: 0; }
+.field.check { display: flex; align-items: center; gap: 8px; }
+.field.check input { accent-color: var(--ui-accent); margin: 0; }
 
 .settings {
   bottom: 86px;

@@ -10,6 +10,12 @@ export interface DockOptions {
   wobble: number;
   tier: TierId;
   glow: number;
+  hour: number;
+  auto: boolean;
+  fog: number;
+  onHour(h: number): void;
+  onAuto(on: boolean): void;
+  onFog(v: number): void;
   onTool(t: ToolId): void;
   onRadius(r: number): void;
   onStrength(s: number): void;
@@ -84,6 +90,7 @@ export class Dock {
   private readonly undoBtn: HTMLButtonElement;
   private readonly redoBtn: HTMLButtonElement;
   private readonly sizeInput: HTMLInputElement;
+  private readonly timeInput: HTMLInputElement;
   private readonly toast: HTMLDivElement;
   private readonly root: HTMLDivElement;
   private readonly settings: HTMLDivElement;
@@ -131,6 +138,18 @@ export class Dock {
     title.textContent = 'Settings';
     const wob = slider('Wobble', 0, 100, 1, o.wobble, o.onWobble);
     const glow = slider('Glow', 0, 1, 0.01, o.glow, o.onGlow);
+    const time = slider('Time of day', 0, 24, 0.05, o.hour, o.onHour);
+    this.timeInput = time.input;
+    const autoWrap = document.createElement('label');
+    autoWrap.className = 'field check';
+    const autoBox = document.createElement('input');
+    autoBox.type = 'checkbox';
+    autoBox.checked = o.auto;
+    autoBox.addEventListener('change', () => o.onAuto(autoBox.checked));
+    const autoText = document.createElement('span');
+    autoText.textContent = 'Auto day cycle';
+    autoWrap.append(autoBox, autoText);
+    const fogS = slider('Fog', 0, 1, 0.01, o.fog, o.onFog);
     const sea = slider('Sea level (0 = off)', 0, 1, 0.01, 0, o.onSea);
     const tierWrap = document.createElement('label');
     tierWrap.className = 'field';
@@ -149,7 +168,7 @@ export class Dock {
     const note = document.createElement('div');
     note.className = 'note';
     note.textContent = 'Lower the quality if it stutters. Higher levels use a finer terrain.';
-    this.settings.append(title, wob.wrap, glow.wrap, sea.wrap, tierWrap, note);
+    this.settings.append(title, time.wrap, autoWrap, fogS.wrap, wob.wrap, glow.wrap, sea.wrap, tierWrap, note);
     gear.addEventListener('click', () => {
       const open = this.settings.classList.toggle('hidden') === false;
       gear.setAttribute('aria-pressed', String(open));
@@ -169,6 +188,11 @@ export class Dock {
 
   setTool(t: ToolId): void {
     for (const [id, b] of this.toolButtons) b.setAttribute('aria-pressed', String(id === t));
+  }
+
+  /** Keeps the time slider in sync while the day cycle runs. */
+  setHour(h: number): void {
+    this.timeInput.value = String(h);
   }
 
   setRadius(r: number): void {
