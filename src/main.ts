@@ -77,11 +77,19 @@ async function start(): Promise<void> {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
+  // Measurement hygiene: skip warm-up frames and never count time spent in a hidden tab.
+  const WARMUP_FRAMES = 60;
+  let framesSeen = 0;
+  document.addEventListener('visibilitychange', () => {
+    stats.reset();
+    framesSeen = 0;
+  });
+
   let last = performance.now();
   renderer.setAnimationLoop((now: number) => {
     const frameMs = now - last;
     last = now;
-    stats.push(frameMs);
+    if (framesSeen++ >= WARMUP_FRAMES) stats.push(frameMs);
 
     const steps = fixed.advance(frameMs);
     for (let i = 0; i < steps; i++) {
