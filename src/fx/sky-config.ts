@@ -36,5 +36,4 @@ export const SKY_LIGHT = {
   /** Sun path tilt (z component before normalizing). */
   tiltZ: 0.35,
   /** Fog density slider (0..1) -> FogExp2 density. */
-  maxFogDensity: 0.11,
 } as const;

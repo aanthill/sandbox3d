@@ -97,3 +97,17 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   .btn, .settings { transition: none; }
 }
+
+/* Fog: 2D drifting cloud wisps over the whole screen (see src/fx/fog-overlay.ts). */
+.fog-overlay { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
+.fog-layer {
+  position: absolute; left: 0; top: 0;
+  width: calc(100vw + var(--tile) * 2); height: calc(100vh + var(--tile) * 2);
+  mask-repeat: repeat; -webkit-mask-repeat: repeat;
+  will-change: transform;
+}
+.fog-layer-0 { animation: fog-drift-a 70s linear infinite; opacity: 0.9; }
+.fog-layer-1 { animation: fog-drift-b 110s linear infinite; opacity: 0.6; }
+@keyframes fog-drift-a { to { transform: translate3d(calc(var(--tile) * -1), calc(var(--tile) * -0.35), 0); } }
+@keyframes fog-drift-b { to { transform: translate3d(calc(var(--tile) * -1), calc(var(--tile) * 0.5), 0); } }
+@media (prefers-reduced-motion: reduce) { .fog-layer { animation: none; } }

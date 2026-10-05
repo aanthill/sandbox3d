@@ -1,7 +1,6 @@
 import {
   AmbientLight,
   DirectionalLight,
-  FogExp2,
   HemisphereLight,
   PerspectiveCamera,
   Raycaster,
@@ -32,6 +31,7 @@ import { Splash } from './fx/splash';
 import { Sky } from './fx/sky';
 import { Rain } from './fx/rain';
 import { Plants } from './life/plants';
+import { FogOverlay } from './fx/fog-overlay';
 import { computeDayState, createDayState } from './fx/daycycle';
 import { SKY_LIGHT } from './fx/sky-config';
 import { FountainMarkers } from './world/fountain-markers';
@@ -71,12 +71,12 @@ export class App {
   private readonly waterMat = createWaterMaterial();
   private readonly sky = new Sky();
   private readonly day = createDayState();
-  private readonly fog = new FogExp2(0x000000, 0);
+  private readonly fogOverlay = new FogOverlay();
   private readonly ambient = new AmbientLight(0xffffff, 0.16);
   private readonly hemi = new HemisphereLight(0xbfd6ff, 0x1d1a38, 0.7);
   private hour = 10;
   private readonly camForward = new Vector3();
-  private autoDay = false;
+  private autoDay = true; // the day cycle runs from the start
   private fogAmount = 0;
   private rainAmount = 0;
   private rain: Rain | null = null;
@@ -114,7 +114,7 @@ export class App {
     this.camera.updateProjectionMatrix();
 
     scene.add(this.ambient, this.hemi, this.sky.mesh);
-    scene.fog = this.fog;
+    document.body.append(this.fogOverlay.root);
     scene.add(this.sun);
     scene.add(createGroundShadow());
     scene.add(this.ring.object);
@@ -406,8 +406,8 @@ export class App {
     this.hemi.intensity = d.hemiIntensity;
     this.ambient.intensity = d.ambientIntensity;
     this.sky.apply(d);
-    this.fog.color.setRGB(d.horizon[0] as number, d.horizon[1] as number, d.horizon[2] as number);
-    this.fog.density = this.fogAmount * this.fogAmount * SKY_LIGHT.maxFogDensity;
+    this.fogOverlay.setColor(d.horizon[0] as number, d.horizon[1] as number, d.horizon[2] as number);
+    this.fogOverlay.set(this.fogAmount);
     this.waterMat.setSky(d.horizon[0] as number, d.horizon[1] as number, d.horizon[2] as number);
   }
 
