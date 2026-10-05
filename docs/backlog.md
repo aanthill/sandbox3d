@@ -9,3 +9,6 @@ Ideas que no entran en la fase actual. No implementar sin pedirlo.
 - Acoplar vecinos en los resortes para que el wobble se propague como onda.
 - Dock con magnificación elástica estilo macOS.
 - Detección de celulares con aviso (Fase 8).
+- **Ultra (1024²) no cabe en CPU:** medido en el peor caso (todo el terreno moviéndose), el paso de resortes cuesta ~14 ms (128²: 0,3 ms · 256²: 0,7 ms · 512²: 2,5 ms; presupuesto de CPU: 3 ms). Mover los resortes y la actualización de vértices a la GPU (compute) antes de ofrecer Ultra como nivel normal. Hoy aparece como "experimental".
+- Relleno inicial de la malla repartido en varios cuadros (hoy es un solo cuadro bajo el aviso "Building world…"; en Ultra puede tardar).
+- Ajuste fino de la sensación del wobble (rigidez 90, amortiguación según el deslizador) en la PC del usuario.

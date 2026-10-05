@@ -8,6 +8,8 @@ export interface QualityTier {
   /** Upper bound for the device pixel ratio at this tier. */
   maxPixelRatio: number;
   shadows: boolean;
+  /** Shadow map resolution (0 when shadows are off). */
+  shadowMapSize: number;
   /** Glass blur (CSS backdrop-filter) on the UI; costs GPU time, so off on Low/Medium. */
   uiBlur: boolean;
 }
@@ -17,10 +19,10 @@ export interface QualityTier {
  * it is the default and the target for modest GPUs.
  */
 export const TIERS: Record<TierId, QualityTier> = {
-  low: { id: 'low', label: 'Low', grid: 128, maxPixelRatio: 1, shadows: false, uiBlur: false },
-  medium: { id: 'medium', label: 'Medium', grid: 256, maxPixelRatio: 1.5, shadows: true, uiBlur: false },
-  high: { id: 'high', label: 'High', grid: 512, maxPixelRatio: 2, shadows: true, uiBlur: true },
-  ultra: { id: 'ultra', label: 'Ultra', grid: 1024, maxPixelRatio: 2, shadows: true, uiBlur: true },
+  low: { id: 'low', label: 'Low', grid: 128, maxPixelRatio: 1, shadows: false, shadowMapSize: 0, uiBlur: false },
+  medium: { id: 'medium', label: 'Medium', grid: 256, maxPixelRatio: 1.5, shadows: true, shadowMapSize: 1024, uiBlur: false },
+  high: { id: 'high', label: 'High', grid: 512, maxPixelRatio: 2, shadows: true, shadowMapSize: 2048, uiBlur: true },
+  ultra: { id: 'ultra', label: 'Ultra', grid: 1024, maxPixelRatio: 2, shadows: true, shadowMapSize: 2048, uiBlur: true },
 };
 
 export const TIER_ORDER: readonly TierId[] = ['low', 'medium', 'high', 'ultra'];

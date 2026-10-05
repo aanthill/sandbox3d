@@ -12,6 +12,7 @@ export class PerfPanel {
     private readonly updateEveryMs = 250,
   ) {
     this.el = document.createElement('div');
+    this.el.className = 'perf-panel';
     Object.assign(this.el.style, {
       position: 'fixed',
       top: '12px',
