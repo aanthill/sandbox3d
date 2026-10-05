@@ -9,8 +9,8 @@ import { PLANT_POP } from '../anim/config';
 const SLICES = 30;
 const SINK = 0.008; // roots sit slightly below the surface
 const TREE_SIZE = 1.4;
-/** Candidate spots sit on a jittered lattice; wander is a fraction of the pitch so trees never crowd. */
-const JITTER = 0.3;
+/** Candidate spots sit on a jittered lattice; wander is a fraction of the pitch (close to random, so trees cluster into groves). */
+const JITTER = 0.45;
 const MIN_SHOWN = GROWTH.minSize;
 
 /**

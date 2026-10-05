@@ -1,5 +1,5 @@
 import { Color, MeshStandardNodeMaterial } from 'three/webgpu';
-import { float, mix, mx_noise_float, normalView, normalWorld, positionView, positionViewDirection, positionWorld, smoothstep, uniform, vec2, vec3, vertexColor } from 'three/tsl';
+import { abs, float, mix, mx_noise_float, normalView, normalWorld, positionView, positionViewDirection, positionWorld, sin, smoothstep, uniform, vec2, vec3, vertexColor } from 'three/tsl';
 import { BASE_Y, MAX_H } from '../world/heightfield';
 
 export interface JellyMaterial {
@@ -39,7 +39,25 @@ export function createJellyMaterial(rimHex: number, glow = 0.7): JellyMaterial {
   const near = float(1).sub(smoothstep(float(3.5), float(8), positionView.z.negate()));
   const tone = patches.mul(0.3).add(fine.mul(0.22).mul(near));
   const lawn = vec3(float(1).add(tone.mul(0.7)), float(1).add(tone), float(1).add(tone.mul(0.25)));
-  material.colorNode = mix(vec3(1, 1, 1), lawn, greenness.mul(upFacing));
+  const lawnMix = greenness.mul(upFacing);
+
+  // Sand: warm colors (red clearly above green). Fine grain plus soft wind ripples; 3D noise, so no stretching.
+  const p3 = positionWorld;
+  const sandMask = smoothstep(float(1.2), float(1.5), vc.r.div(vc.g.max(0.001)));
+  const sandGrain = mx_noise_float(p3.mul(150)).mul(0.2).mul(near);
+  const sandRipple = sin(p3.x.mul(0.6).add(p3.z).mul(55).add(mx_noise_float(p3.mul(5)).mul(9))).mul(0.06);
+  const sandTone = mx_noise_float(p3.mul(11)).mul(0.14).add(sandGrain).add(sandRipple.mul(near.mul(0.5).add(0.5)));
+  const sand = vec3(float(1).add(sandTone), float(1).add(sandTone.mul(0.9)), float(1).add(sandTone.mul(0.7)));
+
+  // Rock (and the strata walls): bluish colors. Coarse blotches, fine grain and dark crack veins.
+  const rockMask = smoothstep(float(1.4), float(2.0), vc.b.div(vc.g.max(0.001)));
+  const veins = smoothstep(float(0.88), float(0.99), float(1).sub(abs(mx_noise_float(p3.mul(20)))));
+  const rockTone = mx_noise_float(p3.mul(9)).mul(0.22)
+    .add(mx_noise_float(p3.mul(80)).mul(0.14).mul(near))
+    .sub(veins.mul(0.3));
+  const rock = vec3(float(1).add(rockTone), float(1).add(rockTone), float(1).add(rockTone.mul(0.8)));
+
+  material.colorNode = mix(mix(mix(vec3(1, 1, 1), lawn, lawnMix), sand, sandMask), rock, rockMask);
 
   material.emissiveNode = rimColor.mul(fresnel.mul(0.4)).add(inner).mul(glowAmount);
 

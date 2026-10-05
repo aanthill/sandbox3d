@@ -30,3 +30,4 @@ Ideas que no entran en la fase actual. No implementar sin pedirlo.
 - Grass is now a procedural texture in `materials/jelly.ts` (lawn mottling on green, up-facing ground), no longer instanced geometry. Trade-off: grass no longer grows/withers with moisture. Idea: drive the lawn mask from the wetness field so dry ground looks yellower.
 - Trees: matte Lambert material, dark palette plus per-instance tonal variety, placed on a jittered lattice (~400 on Low). `GRASS` kind in `growth.ts` is now unused; remove if grass geometry never returns.
 - Tree wind sway not implemented.
+- (2026-10-04) Trees back to clustered placement (user preference): ~2400 on Low. Sand and rock got procedural textures in `materials/jelly.ts` (3D noise: grain, ripples, cracks).
