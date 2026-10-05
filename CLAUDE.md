@@ -18,7 +18,7 @@ El plan completo está en `docs/plan.md`. Léelo antes de empezar cualquier fase
 | 8 | Agua | Mapa de alturas de agua en la GPU + partículas de salpicadura y espuma |
 | 9 | Física | Rapier (WebAssembly) |
 | 10 | Interfaz | HTML/CSS + TypeScript, vidrio translúcido estilo iOS, resortes |
-| 11 | Equipo objetivo | PC media-alta y alta; niveles Medio, Alto, Ultra; aviso claro en celular |
+| 11 | Equipo objetivo | PC media-alta y alta; niveles **Bajo (por defecto), Medio, Alto, Ultra**; aviso claro en celular. Bajo se agregó tras la primera prueba en la PC del usuario (~55 FPS con un cubo): hay que cuidar equipos modestos |
 | 12 | Guardado | Sin servidor: IndexedDB + exportar/importar archivo |
 | 13 | Multijugador | No, por ahora |
 | 14 | Idioma | Inglés primero, con iconos claros |
@@ -53,13 +53,16 @@ Lógica e interfaz (CPU) 3,0 ms · Simulación (GPU) 4,0 ms · Dibujo de la esce
 
 ## Niveles de calidad (metas de diseño, se validan midiendo)
 
-| | Medio | Alto | Ultra |
-|---|---|---|---|
-| FPS | 60 | 60 a 120 | 120 a 144 |
-| Mundo | 256x256 | 512x512 | 1024x1024 |
-| Plantas | ~50 000 | ~150 000 | ~300 000 |
-| Partículas | ~100 000 | ~300 000 | 500 000+ |
-| Texturas | 1K | 2K | 2K a 4K |
+| | Bajo (defecto) | Medio | Alto | Ultra |
+|---|---|---|---|---|
+| FPS | 30 a 60 estables | 60 | 60 a 120 | 120 a 144 |
+| Mundo | 128x128 | 256x256 | 512x512 | 1024x1024 |
+| Plantas | ~15 000 | ~50 000 | ~150 000 | ~300 000 |
+| Partículas | ~30 000 | ~100 000 | ~300 000 | 500 000+ |
+| Texturas | 512 a 1K | 1K | 2K | 2K a 4K |
+| Sombras / blur de interfaz | No / No | Sí / No | Sí / Sí | Sí / Sí |
+
+Calidad adaptable (`src/perf/adaptive.ts`): si el tiempo por cuadro supera ~22 ms baja la resolución interna (hasta 50 %) y la sube despacio cuando hay margen. Nada debe congelar la pantalla: el trabajo pesado (generar o remuestrear el mundo) se reparte en varios cuadros con un presupuesto de milisegundos.
 
 ## Estructura del repositorio
 
@@ -90,7 +93,7 @@ public/       audio, iconos, mundos de ejemplo
 
 - No cambiar la arquitectura ni las decisiones de este archivo sin avisar.
 - Una tarea por sesión, con criterios verificables; commits pequeños y un resumen de qué cambió y cómo probarlo.
-- Tocar solo el alcance pedido. Ideas nuevas van a una lista de "para después", no al código.
+- Tocar solo el alcance pedido. Ideas nuevas van a `docs/backlog.md` (lista de "para después"), no al código.
 - Estas sesiones probablemente no tienen GPU potente: entrega código, pruebas de lógica y paneles de medición; el usuario juzga la fluidez y el aspecto en su PC.
 - Solo recursos con licencia libre o propios; anotar cada licencia en la página de créditos.
 - Estilo de código: TypeScript estricto, módulos pequeños, nombres en inglés en el código; textos de interfaz en inglés.

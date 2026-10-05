@@ -280,7 +280,7 @@ Cuadrícula de 256x256 (Medio), 512x512 (Alto) o 1024x1024 (Ultra), ajustable. C
 
 | Métrica | Medio | Alto | Ultra |
 |---|---|---|---|
-| Equipo | GPU dedicada media o integrada reciente potente | GPU media-alta | GPU de gama alta |
+| Equipo | GPU modesta o integrada | GPU dedicada media o integrada reciente potente | GPU media-alta | GPU de gama alta |
 | FPS | 60 | 60 a 120 | 120 a 144 |
 | Resolución | 1080p | 1440p | 1440p o 4K con escalado |
 | Mundo | 256x256 | 512x512 | 1024x1024 |
@@ -345,3 +345,7 @@ Antes de lanzar:
 ## 10. Glosario
 
 Mapa de alturas, shader, GPU, WebGL/WebGPU, instancing, bloom, post-procesado, boids, paso de tiempo fijo, calidad dinámica, wobble/resorte, compute shader, SSAO, SSR, TAA, presupuesto por cuadro, Fresnel, translucidez, refracción, emisivo, normal map, mapeo triplanar, IBL, tone mapping, KTX2/Basis. Definiciones en el PDF original del plan.
+
+## Actualización (4 de octubre de 2026): nivel Bajo
+
+Primera prueba en la PC del usuario: un cubo marcó ~55 FPS (1366x613, WebGPU) con un tirón puntual de ~1 s. Se agrega el nivel **Bajo** (mundo 128x128, sin sombras ni blur de interfaz, pixel ratio 1) como nivel por defecto, y calidad adaptable de resolución interna. Ver `CLAUDE.md` para la tabla vigente. Los niveles de la sección 7 se leen como Medio, Alto y Ultra.
