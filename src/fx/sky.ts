@@ -24,9 +24,9 @@ const RADIUS = 45;
 /** A comet appears at night every COMET_MIN..COMET_MAX seconds, in front of the camera. */
 const COMET_MIN = 35;
 const COMET_MAX = 110;
-const COMET_DURATION = 3.6;
-const COMET_SPEED = 0.22; // radians per second along its great circle
-const COMET_TAIL = 0.4;
+const COMET_DURATION = 1.5;
+const COMET_SPEED = 0.65; // radians per second along its great circle
+const COMET_TAIL = 0.55;
 const WORLD_UP = new Vector3(0, 1, 0);
 
 /**
@@ -90,12 +90,12 @@ export class Sky {
     const perp = length(rel.sub(tail.mul(along)));
     const k = along.div(COMET_TAIL);
     const inTail = step(float(0), along).mul(step(along, float(COMET_TAIL)));
-    const streak = inTail.mul(float(1).sub(k).pow(2)).mul(smoothstep(float(0.012).mul(float(1).sub(k.mul(0.7))), float(0), perp));
-    const headGlow = exp(length(rel).pow(2).mul(-9000));
-    const fadeInOut = smoothstep(float(0), float(0.5), this.cometAge).mul(
-      smoothstep(float(COMET_DURATION), float(COMET_DURATION - 0.8), this.cometAge),
+    const streak = inTail.mul(float(1).sub(k).pow(2)).mul(smoothstep(float(0.0035).mul(float(1).sub(k.mul(0.8))), float(0), perp));
+    const headGlow = exp(length(rel).pow(2).mul(-70000));
+    const fadeInOut = smoothstep(float(0), float(0.12), this.cometAge).mul(
+      smoothstep(float(COMET_DURATION), float(COMET_DURATION - 0.35), this.cometAge),
     );
-    const comet = streak.mul(1.6).add(headGlow.mul(3)).mul(this.cometOn).mul(fadeInOut);
+    const comet = streak.mul(1.6).add(headGlow.mul(2.5)).mul(this.cometOn).mul(fadeInOut);
     col = col.add(vec3(0.8, 0.92, 1.0).mul(comet));
 
     const material = new MeshBasicNodeMaterial({ side: BackSide, depthWrite: false, fog: false });
